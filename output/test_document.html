@@ -271,9 +271,9 @@ img {
 </ul>
 <p>2. A command prompt window should appear. It may look slightly different depending on your system but will perform the same as the interface is text-based from here</p>
 <p>3. Now we will connect to Raptor, type:</p>
-<p><code></code><code></code></p>
-<p>ssh abc12@raptor.kent.ac.uk</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ssh abc12@raptor.kent.ac.uk
+</code></pre>
 <p>Replacing <code>abc12</code> with your Kent ID, and then hit enter. If it prompts you for whether you trust this connection or a similar message, press <code>y</code> or type <code>yes</code> and hit enter</p>
 <p>4. It will prompt you for your password, enter it, and then hit enter again. Don’t be alarmed if it doesn’t look like you’re typing anything here, that’s normal for the terminal when entering passwords</p>
 <p>5. Done! You should now be on Raptor via command line</p>
@@ -282,128 +282,128 @@ img {
 <p>The Unix file system is organised hierarchically, like folders on your computer. Your <strong>home directory</strong> (<code>~</code>) is your personal space where you can create files and folders. We'll learn the essential commands for navigating, creating, and managing directories.</p>
 <h3>Task 1: Current Directory and Creating Your Workspace</h3>
 <p>You should now see a terminal entry ready for a command:</p>
-<p><code></code><code></code></p>
-<p>abc12@raptor [~] $</p>
-<p><code></code><code></code></p>
+<pre><code>
+abc12@raptor [~] $
+</code></pre>
 <p>As a reminder, the first part is your username, then the machine's name, your current directory (in square brackets), and the dollar sign (<code>$</code>) shows where you can type your command. The <code>~</code> (tilde) represents your home directory.</p>
 <p>1. Let's find out where your home directory actually is by typing the following command that will print out the working directory:</p>
-<p><code></code><code></code></p>
-<p>pwd</p>
-<p><code></code><code></code></p>
+<pre><code>
+   pwd
+</code></pre>
 <p>This stands for <strong>Print Working Directory</strong>.</p>
 <p>2. For the purposes of today, we're going to create a directory where all of our tasks can take place so we don't create random files everywhere in your home directory.</p>
 <p>Create a new directory called &quot;unix_learning&quot; by using:</p>
-<p><code></code><code></code></p>
-<p>mkdir unix_learning</p>
-<p><code></code><code></code></p>
+<pre><code>
+   mkdir unix_learning
+</code></pre>
 <p><strong>mkdir</strong> stands for <strong>Make Directory</strong>. You've just created a new folder!</p>
 <p>3. Now let's enter the new directory we created by using the change directory command:</p>
-<p><code></code><code></code></p>
-<p>cd unix_learning</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cd unix_learning
+</code></pre>
 <p><strong>cd</strong> stands for <strong>Change Directory</strong>. Notice your terminal prompt should now show:</p>
-<p><code></code><code></code></p>
-<p>abc12@raptor [~/unix_learning] $</p>
-<p><code></code><code></code></p>
+<pre><code>
+   abc12@raptor [~/unix_learning] $
+</code></pre>
 <p>4. Run <code>pwd</code> again to confirm we've moved into the new directory:</p>
-<p><code></code><code></code></p>
-<p>pwd</p>
-<p><code></code><code></code></p>
+<pre><code>
+   pwd
+</code></pre>
 <h3>Task 2: Navigating Directories</h3>
 <p>Now that we're in our workspace, let's learn how to navigate around the file system.</p>
 <p>1. Create a few more directories to explore navigation. We'll create three subdirectories:</p>
-<p><code></code><code></code></p>
-<p>mkdir projects</p>
-<p>mkdir documents</p>
-<p>mkdir scripts</p>
-<p><code></code><code></code></p>
+<pre><code>
+   mkdir projects
+   mkdir documents
+   mkdir scripts
+</code></pre>
 <p>2. Move into the &quot;projects&quot; directory:</p>
-<p><code></code><code></code></p>
-<p>cd projects</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cd projects
+</code></pre>
 <p>Your prompt should now show you're in <code>~/unix_learning/projects</code>.</p>
 <p>3. Go back up one directory level (to the parent directory) using <code>..</code>:</p>
-<p><code></code><code></code></p>
-<p>cd ..</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cd ..
+</code></pre>
 <p>You're now back in <code>unix_learning</code>. The <code>..</code> always refers to the parent directory.</p>
 <p>4. Go back to your home directory quickly using:</p>
-<p><code></code><code></code></p>
-<p>cd ~</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cd ~
+</code></pre>
 <p>Your prompt should show <code>~</code> again. The <code>~</code> is a shortcut to your home directory from anywhere.</p>
 <p>5. Now navigate back to your unix_learning directory using the full path:</p>
-<p><code></code><code></code></p>
-<p>cd ~/unix_learning</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cd ~/unix_learning
+</code></pre>
 <h3>Task 3: Listing Directory Contents</h3>
 <p>Let's see what's inside our directories using the <code>ls</code> command.</p>
 <p>1. Make sure you're in the unix_learning directory:</p>
-<p><code></code><code></code></p>
-<p>cd ~/unix_learning</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cd ~/unix_learning
+</code></pre>
 <p>2. List the contents of the current directory:</p>
-<p><code></code><code></code></p>
-<p>ls</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls
+</code></pre>
 <p>You should see the three directories we created: <code>projects</code>, <code>documents</code>, <code>scripts</code>.</p>
 <p>3. Now let's use <code>ls</code> with some options to see more detailed information. The <code>-l</code> option shows a &quot;long&quot; format with more details:</p>
-<p><code></code><code></code></p>
-<p>ls -l</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls -l
+</code></pre>
 <p>This shows the file permissions (first column), ownership, file size, date modified, and the name. We'll learn more about permissions later.</p>
 <p>4. The <code>-a</code> option shows all files, including hidden ones (files starting with a dot):</p>
-<p><code></code><code></code></p>
-<p>ls -a</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls -a
+</code></pre>
 <p>You'll see <code>.</code> (current directory) and <code>..</code> (parent directory) as well as any hidden files.</p>
 <p>5. Combine both options to see detailed information including hidden files:</p>
-<p><code></code><code></code></p>
-<p>ls -la</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls -la
+</code></pre>
 <p>6. The <code>-h</code> option shows file sizes in human-readable format (KB, MB, GB instead of bytes):</p>
-<p><code></code><code></code></p>
-<p>ls -lh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls -lh
+</code></pre>
 <p>7. You can also list the contents of a different directory without entering it:</p>
-<p><code></code><code></code></p>
-<p>ls projects</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls projects
+</code></pre>
 <p>This shows what's inside the projects directory from where you are now.</p>
 <h3>Task 4: Copying, Moving, and Removing Directories</h3>
 <p>Now let's practice manipulating directories.</p>
 <p>1. Make sure you're in unix_learning:</p>
-<p><code></code><code></code></p>
-<p>cd ~/unix_learning</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cd ~/unix_learning
+</code></pre>
 <p>2. Copy the &quot;projects&quot; directory and all its contents to a new directory called &quot;projects_backup&quot;:</p>
-<p><code></code><code></code></p>
-<p>cp -r projects projects_backup</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cp -r projects projects_backup
+</code></pre>
 <p>The <code>-r</code> option means &quot;recursive&quot; — it copies the directory and everything inside it.</p>
 <p>3. Move (rename) the &quot;projects_backup&quot; directory to &quot;archive&quot;:</p>
-<p><code></code><code></code></p>
-<p>mv projects_backup archive</p>
-<p><code></code><code></code></p>
+<pre><code>
+   mv projects_backup archive
+</code></pre>
 <p><strong>mv</strong> stands for <strong>Move</strong>. When moving to the same directory, it renames the directory. Check with <code>ls</code> to confirm.</p>
 <p>4. Move the &quot;archive&quot; directory inside the &quot;documents&quot; directory:</p>
-<p><code></code><code></code></p>
-<p>mv archive documents/archive</p>
-<p><code></code><code></code></p>
+<pre><code>
+   mv archive documents/archive
+</code></pre>
 <p>Now it's nested inside documents. Check with <code>ls documents/</code>.</p>
 <p>5. Move it back out to the main unix_learning directory:</p>
-<p><code></code><code></code></p>
-<p>mv documents/archive archive</p>
-<p><code></code><code></code></p>
+<pre><code>
+   mv documents/archive archive
+</code></pre>
 <p>6. Remove the empty &quot;scripts&quot; directory:</p>
-<p><code></code><code></code></p>
-<p>rmdir scripts</p>
-<p><code></code><code></code></p>
+<pre><code>
+   rmdir scripts
+</code></pre>
 <p><strong>rmdir</strong> stands for <strong>Remove Directory</strong>, but it only works if the directory is empty.</p>
 <p>7. If you want to remove a directory that has contents, use <code>rm</code> with the <code>-r</code> option:</p>
-<p><code></code><code></code></p>
-<p>rm -r archive</p>
-<p><code></code><code></code></p>
+<pre><code>
+   rm -r archive
+</code></pre>
 <p><strong>Warning</strong>: This will delete the directory and everything inside it permanently!</p>
 <h3>Challenge Task - Section 1</h3>
 <p>Create a directory structure that represents a project organisation. You should:</p>
@@ -421,139 +421,139 @@ img {
 <h3>Task 1: Creating Text Files</h3>
 <p>There are several ways to create text files in Unix. Let's explore them.</p>
 <p>1. Make sure you're in the unix_learning directory:</p>
-<p><code></code><code></code></p>
-<p>cd ~/unix_learning</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cd ~/unix_learning
+</code></pre>
 <p>2. The simplest way to create an empty file is using <code>touch</code>:</p>
-<p><code></code><code></code></p>
-<p>touch myfile.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   touch myfile.txt
+</code></pre>
 <p>This creates an empty file called &quot;myfile.txt&quot;. Verify it was created:</p>
-<p><code></code><code></code></p>
-<p>ls</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls
+</code></pre>
 <p>3. You can also create a file and add content to it at the same time using <code>echo</code> and redirection (<code>&gt;</code>):</p>
-<p><code></code><code></code></p>
-<p>echo &quot;Hello, this is my first file!&quot; &gt; greeting.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   echo &quot;Hello, this is my first file!&quot; &gt; greeting.txt
+</code></pre>
 <p>The <code>&gt;</code> symbol redirects the output of the echo command into a file. If the file doesn't exist, it creates it.</p>
 <p>4. Create another file with multiple lines. This time, we'll use a special syntax that lets you type multiple lines:</p>
-<p><code></code><code></code></p>
-<p>cat &gt; story.txt &lt;&lt; EOF</p>
-<p>Once upon a time, there was a student learning Unix.</p>
-<p>They discovered the power of the command line.</p>
-<p>And they lived happily ever after.</p>
-<p>EOF</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat &gt; story.txt &lt;&lt; EOF
+   Once upon a time, there was a student learning Unix.
+   They discovered the power of the command line.
+   And they lived happily ever after.
+   EOF
+</code></pre>
 <p>Press Enter after pasting this entire block.</p>
 <p>5. Verify all three files were created:</p>
-<p><code></code><code></code></p>
-<p>ls -l</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls -l
+</code></pre>
 <h3>Task 2: Viewing File Contents</h3>
 <p>Now let's look at what's inside our files.</p>
 <p>1. View the entire contents of a file using <code>cat</code> (concatenate):</p>
-<p><code></code><code></code></p>
-<p>cat greeting.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat greeting.txt
+</code></pre>
 <p>This displays the entire file contents on the screen.</p>
 <p>2. Use <code>less</code> to view a file with scrolling capabilities (useful for large files):</p>
-<p><code></code><code></code></p>
-<p>less story.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   less story.txt
+</code></pre>
 <p>Press <code>Space</code> to scroll down, <code>b</code> to scroll back, and <code>q</code> to quit.</p>
 <p>3. View only the first few lines of a file using <code>head</code>:</p>
-<p><code></code><code></code></p>
-<p>head -n 2 story.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   head -n 2 story.txt
+</code></pre>
 <p>This shows the first 2 lines. The <code>-n</code> option specifies the number of lines.</p>
 <p>4. View only the last few lines using <code>tail</code>:</p>
-<p><code></code><code></code></p>
-<p>tail -n 1 story.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   tail -n 1 story.txt
+</code></pre>
 <p>This shows the last 1 line.</p>
 <h3>Task 3: Editing Files</h3>
 <p>Now let's edit the files we created. We'll use <code>nano</code>, which is a beginner-friendly text editor.</p>
 <p>1. Open the greeting.txt file in the nano editor:</p>
-<p><code></code><code></code></p>
-<p>nano greeting.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   nano greeting.txt
+</code></pre>
 <p>2. You'll see the file contents. Use arrow keys to move around and edit the text. Add a new line at the end that says &quot;This is an edit!&quot;</p>
 <p>3. To save your changes, press <code>Ctrl+O</code> (the letter O, not zero), then press Enter to confirm the filename.</p>
 <p>4. To exit nano, press <code>Ctrl+X</code>.</p>
 <p>5. Verify your changes:</p>
-<p><code></code><code></code></p>
-<p>cat greeting.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat greeting.txt
+</code></pre>
 <h3>Task 4: Searching Within Files</h3>
 <p>The <code>grep</code> command is powerful for finding specific text within files.</p>
 <p>1. Create a file with multiple lines for searching:</p>
-<p><code></code><code></code></p>
-<p>cat &gt; animals.txt &lt;&lt; EOF</p>
-<p>cat</p>
-<p>dog</p>
-<p>cat</p>
-<p>bird</p>
-<p>cat</p>
-<p>fish</p>
-<p>EOF</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat &gt; animals.txt &lt;&lt; EOF
+   cat
+   dog
+   cat
+   bird
+   cat
+   fish
+   EOF
+</code></pre>
 <p>2. Search for the word &quot;cat&quot; in the file:</p>
-<p><code></code><code></code></p>
-<p>grep &quot;cat&quot; animals.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   grep &quot;cat&quot; animals.txt
+</code></pre>
 <p>This shows all lines containing &quot;cat&quot;.</p>
 <p>3. Count how many times &quot;cat&quot; appears (lines containing it):</p>
-<p><code></code><code></code></p>
-<p>grep -c &quot;cat&quot; animals.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   grep -c &quot;cat&quot; animals.txt
+</code></pre>
 <p>The <code>-c</code> option counts matching lines.</p>
 <p>4. Show the line numbers where &quot;cat&quot; appears:</p>
-<p><code></code><code></code></p>
-<p>grep -n &quot;cat&quot; animals.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   grep -n &quot;cat&quot; animals.txt
+</code></pre>
 <p>5. Search for lines that do NOT contain a specific word using <code>-v</code>:</p>
-<p><code></code><code></code></p>
-<p>grep -v &quot;cat&quot; animals.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   grep -v &quot;cat&quot; animals.txt
+</code></pre>
 <h3>Task 5: Copying, Moving, and Deleting Files</h3>
 <p>Let's practice file manipulation.</p>
 <p>1. Copy a file to create a backup:</p>
-<p><code></code><code></code></p>
-<p>cp greeting.txt greeting_backup.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cp greeting.txt greeting_backup.txt
+</code></pre>
 <p><strong>cp</strong> stands for <strong>Copy</strong>. Now you have two identical files.</p>
 <p>2. Verify both files exist:</p>
-<p><code></code><code></code></p>
-<p>ls -l greeting<em></em></p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls -l greeting*
+</code></pre>
 <p>The <code><em></code> is a wildcard that matches any characters. This shows all files starting with &quot;greeting&quot;.</em></p>
 <p>3. Move (rename) a file:</p>
-<p><code></code><code></code></p>
-<p>mv story.txt my_story.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   mv story.txt my_story.txt
+</code></pre>
 <p>The file &quot;story.txt&quot; is now called &quot;my_story.txt&quot;.</p>
 <p>4. Move a file to a different directory:</p>
-<p><code></code><code></code></p>
-<p>mv greeting_backup.txt documents/</p>
-<p><code></code><code></code></p>
+<pre><code>
+   mv greeting_backup.txt documents/
+</code></pre>
 <p>The file is now inside the documents directory. Check:</p>
-<p><code></code><code></code></p>
-<p>ls documents/</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls documents/
+</code></pre>
 <p>5. Move it back:</p>
-<p><code></code><code></code></p>
-<p>mv documents/greeting_backup.txt .</p>
-<p><code></code><code></code></p>
+<pre><code>
+   mv documents/greeting_backup.txt .
+</code></pre>
 <p>The <code>.</code> means the current directory.</p>
 <p>6. Delete a file (be careful, this is permanent!):</p>
-<p><code></code><code></code></p>
-<p>rm myfile.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   rm myfile.txt
+</code></pre>
 <p>7. Delete multiple files matching a pattern:</p>
-<p><code></code><code></code></p>
-<p>rm greeting<em></em></p>
-<p><code></code><code></code></p>
+<pre><code>
+   rm greeting*
+</code></pre>
 <p>This deletes all files starting with &quot;greeting&quot;.</p>
 <h3>Challenge Task - Section 2</h3>
 <p>Create a mini project documentation system:</p>
@@ -585,21 +585,21 @@ img {
 </ul>
 <h3>Task 1: Viewing Permissions</h3>
 <p>1. Make sure you're in the unix_learning directory:</p>
-<p><code></code><code></code></p>
-<p>cd ~/unix_learning</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cd ~/unix_learning
+</code></pre>
 <p>2. View files with their permissions using <code>ls -l</code>:</p>
-<p><code></code><code></code></p>
-<p>ls -l</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls -l
+</code></pre>
 <p>3. Let's examine what the permission string means. Create a test file first:</p>
-<p><code></code><code></code></p>
-<p>touch test_file.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   touch test_file.txt
+</code></pre>
 <p>4. View it with permissions:</p>
-<p><code></code><code></code></p>
-<p>ls -l test_file.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls -l test_file.txt
+</code></pre>
 <p>You'll see something like: <code>-rw-r--r--</code></p>
 <p>Breaking this down:</p>
 <ul>
@@ -611,33 +611,33 @@ img {
 <h3>Task 2: Changing Permissions with Symbolic Notation</h3>
 <p>The <code>chmod</code> (change mode) command modifies permissions. We can use symbolic notation:</p>
 <p>1. Add execute permission for the owner:</p>
-<p><code></code><code></code></p>
-<p>chmod u+x test_file.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   chmod u+x test_file.txt
+</code></pre>
 <p><code>u+x</code> means: for the user, add execute permission.</p>
 <p>2. Check the permissions changed:</p>
-<p><code></code><code></code></p>
-<p>ls -l test_file.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls -l test_file.txt
+</code></pre>
 <p>You should now see <code>-rwxr--r--</code>.</p>
 <p>3. Remove write permission from the group:</p>
-<p><code></code><code></code></p>
-<p>chmod g-w test_file.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   chmod g-w test_file.txt
+</code></pre>
 <p><code>g-w</code> means: for the group, remove write permission.</p>
 <p>4. Add write permission for others:</p>
-<p><code></code><code></code></p>
-<p>chmod o+w test_file.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   chmod o+w test_file.txt
+</code></pre>
 <p>5. Add read permission to everyone:</p>
-<p><code></code><code></code></p>
-<p>chmod a+r test_file.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   chmod a+r test_file.txt
+</code></pre>
 <p><code>a</code> means &quot;all&quot; (user, group, and other).</p>
 <p>6. Remove all permissions except for the owner (owner can still do everything):</p>
-<p><code></code><code></code></p>
-<p>chmod go-rwx test_file.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   chmod go-rwx test_file.txt
+</code></pre>
 <p>This removes all permissions from group and others.</p>
 <h3>Task 3: Changing Permissions with Numeric Notation</h3>
 <p>Permissions can also be represented as numbers:</p>
@@ -655,43 +655,43 @@ img {
 </ul>
 <p>The format is: <code>chmod [user][group][other] filename</code></p>
 <p>1. Give the owner all permissions, group read-only, others nothing:</p>
-<p><code></code><code></code></p>
-<p>chmod 740 test_file.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   chmod 740 test_file.txt
+</code></pre>
 <p>2. Verify:</p>
-<p><code></code><code></code></p>
-<p>ls -l test_file.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls -l test_file.txt
+</code></pre>
 <p>You should see <code>rwxr-----</code>.</p>
 <p>3. Give everyone read and write (but not execute):</p>
-<p><code></code><code></code></p>
-<p>chmod 666 test_file.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   chmod 666 test_file.txt
+</code></pre>
 <p>4. Give everyone full permissions:</p>
-<p><code></code><code></code></p>
-<p>chmod 777 test_file.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   chmod 777 test_file.txt
+</code></pre>
 <p>5. Standard permissions for scripts (owner can execute, others can read):</p>
-<p><code></code><code></code></p>
-<p>chmod 755 test_file.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   chmod 755 test_file.txt
+</code></pre>
 <h3>Task 4: Changing File Ownership</h3>
 <p>_<strong>Important Note</strong>: On Raptor, you won't have permission to change file ownership, but you can still learn the command syntax._</p>
 <p>The <code>chown</code> (change owner) command changes who owns a file. Note: You can usually only change ownership if you're the root user, but let's see the syntax.</p>
 <p>1. View the current owner of a file:</p>
-<p><code></code><code></code></p>
-<p>ls -l test_file.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls -l test_file.txt
+</code></pre>
 <p>The third column shows the owner (usually your username).</p>
 <p>2. The command to change ownership would be:</p>
-<p><code></code><code></code></p>
-<p>sudo chown newuser test_file.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   sudo chown newuser test_file.txt
+</code></pre>
 <p><strong>Note</strong>: This requires administrator (sudo) privileges. As a regular user, you'll see a permission denied error, which is expected.</p>
 <p>3. You can change the group of a file (if you're in that group):</p>
-<p><code></code><code></code></p>
-<p>sudo chown :groupname test_file.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   sudo chown :groupname test_file.txt
+</code></pre>
 <h3>Challenge Task - Section 3</h3>
 <p>Create a system for managing script permissions:</p>
 <p>1. Create a directory called &quot;scripts&quot; in unix_learning</p>
@@ -713,146 +713,146 @@ img {
   <li><strong>stderr (Standard Error)</strong>: Where error messages go</li>
 </ul>
 <p>1. Create a test file with some data:</p>
-<p><code></code><code></code></p>
-<p>cat &gt; numbers.txt &lt;&lt; EOF</p>
-<p>3</p>
-<p>1</p>
-<p>4</p>
-<p>1</p>
-<p>5</p>
-<p>9</p>
-<p>2</p>
-<p>10</p>
-<p>6</p>
-<p>EOF</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat &gt; numbers.txt &lt;&lt; EOF
+   3
+   1
+   4
+   1
+   5
+   9
+   2
+   10
+   6
+   EOF
+</code></pre>
 <p>2. Create another file with names:</p>
-<p><code></code><code></code></p>
-<p>cat &gt; names.txt &lt;&lt; EOF</p>
-<p>alice</p>
-<p>bob</p>
-<p>charlie</p>
-<p>alice</p>
-<p>diana</p>
-<p>EOF</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat &gt; names.txt &lt;&lt; EOF
+   alice
+   bob
+   charlie
+   alice
+   diana
+   EOF
+</code></pre>
 <h3>Task 2: Redirecting Output to Files</h3>
 <p>The <code>&gt;</code> operator redirects stdout to a file (overwrites if file exists).</p>
 <p>1. Redirect the output of <code>ls</code> to a file:</p>
-<p><code></code><code></code></p>
-<p>ls &gt; directory_listing.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls &gt; directory_listing.txt
+</code></pre>
 <p>2. View the file:</p>
-<p><code></code><code></code></p>
-<p>cat directory_listing.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat directory_listing.txt
+</code></pre>
 <p>3. Try running the command again:</p>
-<p><code></code><code></code></p>
-<p>ls &gt; directory_listing.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls &gt; directory_listing.txt
+</code></pre>
 <p>The file is overwritten with the new output.</p>
 <p>4. To append to a file instead of overwriting, use <code>&gt;&gt;</code>:</p>
-<p><code></code><code></code></p>
-<p>echo &quot;This is an additional line&quot; &gt;&gt; directory_listing.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   echo &quot;This is an additional line&quot; &gt;&gt; directory_listing.txt
+</code></pre>
 <p>5. Verify the line was added:</p>
-<p><code></code><code></code></p>
-<p>cat directory_listing.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat directory_listing.txt
+</code></pre>
 <h3>Task 3: Using Pipes to Chain Commands</h3>
 <p>The <code>|</code> (pipe) operator takes the stdout of one command and sends it as stdin to another command.</p>
 <p>1. List the unix_learning directory and count the number of items:</p>
-<p><code></code><code></code></p>
-<p>ls | wc -l</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls | wc -l
+</code></pre>
 <p><code>wc</code> is the word count command. <code>-l</code> counts lines. We piped the output of <code>ls</code> into <code>wc -l</code>.</p>
 <p>2. Sort the contents of names.txt:</p>
-<p><code></code><code></code></p>
-<p>cat names.txt | sort</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat names.txt | sort
+</code></pre>
 <p>3. Sort and remove duplicates:</p>
-<p><code></code><code></code></p>
-<p>cat names.txt | sort | uniq</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat names.txt | sort | uniq
+</code></pre>
 <p>4. Count unique names:</p>
-<p><code></code><code></code></p>
-<p>cat names.txt | sort | uniq | wc -l</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat names.txt | sort | uniq | wc -l
+</code></pre>
 <p>5. Sort numbers:</p>
-<p><code></code><code></code></p>
-<p>cat numbers.txt | sort</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat numbers.txt | sort
+</code></pre>
 <p>Note: This sorts them as text, so 10 comes before 2.</p>
 <p>6. Sort numbers numerically using <code>sort -n</code>:</p>
-<p><code></code><code></code></p>
-<p>cat numbers.txt | sort -n</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat numbers.txt | sort -n
+</code></pre>
 <h3>Task 4: Searching and Filtering with Pipes</h3>
 <p>The <code>grep</code> command is especially powerful when used with pipes.</p>
 <p>1. List all files and show only those with &quot;.txt&quot; in the name:</p>
-<p><code></code><code></code></p>
-<p>ls | grep &quot;.txt&quot;</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls | grep &quot;.txt&quot;
+</code></pre>
 <p>2. List files with details and filter for files larger than 0 bytes:</p>
-<p><code></code><code></code></p>
-<p>ls -l | grep -v &quot;^total&quot;</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls -l | grep -v &quot;^total&quot;
+</code></pre>
 <p><code>-v</code> inverts the match (shows lines that don't match).</p>
 <p>3. Create a file with programming languages:</p>
-<p><code></code><code></code></p>
-<p>cat &gt; languages.txt &lt;&lt; EOF</p>
-<p>Python</p>
-<p>JavaScript</p>
-<p>Java</p>
-<p>Rust</p>
-<p>Go</p>
-<p>Python</p>
-<p>C++</p>
-<p>Rust</p>
-<p>EOF</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat &gt; languages.txt &lt;&lt; EOF
+   Python
+   JavaScript
+   Java
+   Rust
+   Go
+   Python
+   C++
+   Rust
+   EOF
+</code></pre>
 <p>4. Find and count occurrences of &quot;Python&quot;:</p>
-<p><code></code><code></code></p>
-<p>grep &quot;Python&quot; languages.txt | wc -l</p>
-<p><code></code><code></code></p>
+<pre><code>
+   grep &quot;Python&quot; languages.txt | wc -l
+</code></pre>
 <p>5. Show unique languages (sorted):</p>
-<p><code></code><code></code></p>
-<p>cat languages.txt | sort | uniq</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat languages.txt | sort | uniq
+</code></pre>
 <h3>Task 5: Redirecting Input from Files</h3>
 <p>The <code>&lt;</code> operator redirects a file as input to a command.</p>
 <p>1. Use a file as input to the <code>sort</code> command:</p>
-<p><code></code><code></code></p>
-<p>sort &lt; numbers.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   sort &lt; numbers.txt
+</code></pre>
 <p>This is equivalent to <code>cat numbers.txt | sort</code>, but the data goes directly to sort.</p>
 <p>2. Count the number of lines in a file:</p>
-<p><code></code><code></code></p>
-<p>wc -l &lt; names.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   wc -l &lt; names.txt
+</code></pre>
 <p>3. Combine input and output redirection:</p>
-<p><code></code><code></code></p>
-<p>sort &lt; numbers.txt &gt; sorted_numbers.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   sort &lt; numbers.txt &gt; sorted_numbers.txt
+</code></pre>
 <p>This reads from numbers.txt, sorts it, and writes to sorted_numbers.txt.</p>
 <h3>Task 6: Combining Pipes and Redirection</h3>
 <p>You can use pipes and redirection together for powerful data processing.</p>
 <p>1. Find all files in the current directory, list them with details, filter for readable files, and save to a file:</p>
-<p><code></code><code></code></p>
-<p>ls -l | grep &quot;r--&quot; &gt; readable_files.txt</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls -l | grep &quot;r--&quot; &gt; readable_files.txt
+</code></pre>
 <p>2. Count how many files are readable:</p>
-<p><code></code><code></code></p>
-<p>ls -l | grep &quot;r--&quot; | wc -l</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls -l | grep &quot;r--&quot; | wc -l
+</code></pre>
 <p>3. Create a sorted, unique list of text files and save it:</p>
-<p><code></code><code></code></p>
-<p>ls <em>.txt | sort | uniq &gt; text_files_list.txt</em></p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls *.txt | sort | uniq &gt; text_files_list.txt
+</code></pre>
 <p>4. Search for a pattern in multiple files and count results:</p>
-<p><code></code><code></code></p>
-<p>grep &quot;the&quot; <em>.txt | wc -l</em></p>
-<p><code></code><code></code></p>
+<pre><code>
+   grep &quot;the&quot; *.txt | wc -l
+</code></pre>
 <h3>Challenge Task - Section 4</h3>
 <p>Create a comprehensive data analysis pipeline:</p>
 <p>1. Create a file called &quot;data.txt&quot; with at least 10 lines containing numbers (1-100, some repeated)</p>
@@ -873,194 +873,199 @@ img {
 <h3>Task 1: Running Python Code</h3>
 <p>Python is an interpreted language, meaning you can run it directly without compilation.</p>
 <p>1. Create a simple Python script:</p>
-<p><code></code><code></code></p>
-<p>cat &gt; hello.py &lt;&lt; EOF</p>
-<p>print(&quot;Hello from Python!&quot;)</p>
-<p>print(&quot;This is running on the Unix command line.&quot;)</p>
-<p>name = input(&quot;What is your name? &quot;)</p>
-<p>print(f&quot;Nice to meet you, {name}!&quot;)</p>
-<p>EOF</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat &gt; hello.py &lt;&lt; EOF
+   print(&quot;Hello from Python!&quot;)
+   print(&quot;This is running on the Unix command line.&quot;)
+   
+   name = input(&quot;What is your name? &quot;)
+   print(f&quot;Nice to meet you, {name}!&quot;)
+   EOF
+</code></pre>
 <p>2. Run the Python script:</p>
-<p><code></code><code></code></p>
-<p>python3 hello.py</p>
-<p><code></code><code></code></p>
+<pre><code>
+   python3 hello.py
+</code></pre>
 <p>Follow the prompt to enter your name.</p>
 <p>3. Create a Python script that does some calculations:</p>
-<p><code></code><code></code></p>
-<p>cat &gt; calculator.py &lt;&lt; EOF</p>
-<p>numbers = [1, 2, 3, 4, 5]</p>
-<p>total = sum(numbers)</p>
-<p>average = total / len(numbers)</p>
-<p>print(f&quot;Numbers: {numbers}&quot;)</p>
-<p>print(f&quot;Sum: {total}&quot;)</p>
-<p>print(f&quot;Average: {average}&quot;)</p>
-<p>EOF</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat &gt; calculator.py &lt;&lt; EOF
+   numbers = [1, 2, 3, 4, 5]
+   total = sum(numbers)
+   average = total / len(numbers)
+   
+   print(f&quot;Numbers: {numbers}&quot;)
+   print(f&quot;Sum: {total}&quot;)
+   print(f&quot;Average: {average}&quot;)
+   EOF
+</code></pre>
 <p>4. Run it:</p>
-<p><code></code><code></code></p>
-<p>python3 calculator.py</p>
-<p><code></code><code></code></p>
+<pre><code>
+   python3 calculator.py
+</code></pre>
 <p>5. To see all Python scripts in your directory:</p>
-<p><code></code><code></code></p>
-<p>ls -l <em>.py</em></p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls -l *.py
+</code></pre>
 <h3>Task 2: Python Virtual Environments &amp; Installing and Using Python Packages</h3>
 <p>Virtual environments let you isolate project dependencies so they don't conflict with system-wide packages. Here we can use Python's  package manager called <code>pip</code> that lets you install additional libraries.</p>
 <p>1. Create a virtual environment called &quot;myenv&quot;:</p>
-<p><code></code><code></code></p>
-<p>python3 -m venv myenv</p>
-<p><code></code><code></code></p>
+<pre><code>
+   python3 -m venv myenv
+</code></pre>
 <p>2. Activate the virtual environment:</p>
-<p><code></code><code></code></p>
-<p>source myenv/bin/activate</p>
-<p><code></code><code></code></p>
+<pre><code>
+   source myenv/bin/activate
+</code></pre>
 <p>Notice your terminal prompt changes to show <code>(myenv)</code> at the beginning.</p>
 <p>3. Inside the virtual environment, install a package (requests - for making web requests):</p>
-<p><code></code><code></code></p>
-<p>pip3 install requests</p>
-<p><code></code><code></code></p>
+<pre><code>
+   pip3 install requests
+</code></pre>
 <p>4. Create a Python script that uses the installed package:</p>
-<p><code></code><code></code></p>
-<p>cat &gt; check_status.py &lt;&lt; EOF</p>
-<p>import requests</p>
-<h1>This would normally check a website's status</h1>
-<h1>For now, just demonstrate the import worked</h1>
-<p>print(&quot;Requests library successfully imported!&quot;)</p>
-<p>print(f&quot;Requests version: {requests.__version__}&quot;)</p>
-<p>EOF</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat &gt; check_status.py &lt;&lt; EOF
+   import requests
+   
+   # This would normally check a website's status
+   # For now, just demonstrate the import worked
+   print(&quot;Requests library successfully imported!&quot;)
+   print(f&quot;Requests version: {requests.__version__}&quot;)
+   EOF
+</code></pre>
 <p>5. Run it:</p>
-<p><code></code><code></code></p>
-<p>python3 check_status.py</p>
-<p><code></code><code></code></p>
+<pre><code>
+   python3 check_status.py
+</code></pre>
 <p>6. Deactivate the virtual environment when done:</p>
-<p><code></code><code></code></p>
-<p>deactivate</p>
-<p><code></code><code></code></p>
+<pre><code>
+   deactivate
+</code></pre>
 <p>The <code>(myenv)</code> prefix disappears from your prompt.</p>
 <h3>Task 3: Compiling and Running Java Code</h3>
 <p>Java is a compiled language, meaning you must compile code before running it.</p>
 <p>1. Create a simple Java program:</p>
-<p><code></code><code></code></p>
-<p>cat &gt; HelloWorld.java &lt;&lt; EOF</p>
-<p>public class HelloWorld {</p>
-<p>public static void main(String[] args) {</p>
-<p>System.out.println(&quot;Hello from Java!&quot;);</p>
-<p>System.out.println(&quot;Running on the Unix command line.&quot;);</p>
-<p>}</p>
-<p>}</p>
-<p>EOF</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat &gt; HelloWorld.java &lt;&lt; EOF
+   public class HelloWorld {
+       public static void main(String[] args) {
+           System.out.println(&quot;Hello from Java!&quot;);
+           System.out.println(&quot;Running on the Unix command line.&quot;);
+       }
+   }
+   EOF
+</code></pre>
 <p><strong>Important</strong>: Java filenames must match the class name exactly, including capitalisation.</p>
 <p>2. Compile the Java code:</p>
-<p><code></code><code></code></p>
-<p>javac HelloWorld.java</p>
-<p><code></code><code></code></p>
+<pre><code>
+   javac HelloWorld.java
+</code></pre>
 <p>This creates a file called <code>HelloWorld.class</code>.</p>
 <p>3. Run the compiled Java program:</p>
-<p><code></code><code></code></p>
-<p>java HelloWorld</p>
-<p><code></code><code></code></p>
+<pre><code>
+   java HelloWorld
+</code></pre>
 <p>Note: You use the class name without the .class extension.</p>
 <p>4. Create a more complex Java program:</p>
-<p><code></code><code></code></p>
-<p>cat &gt; Calculator.java &lt;&lt; EOF</p>
-<p>public class Calculator {</p>
-<p>public static void main(String[] args) {</p>
-<p>int a = 10;</p>
-<p>int b = 5;</p>
-<p>System.out.println(&quot;a = &quot; + a);</p>
-<p>System.out.println(&quot;b = &quot; + b);</p>
-<p>System.out.println(&quot;a + b = &quot; + (a + b));</p>
-<p>System.out.println(&quot;a <em> b = &quot; + (a </em> b));</p>
-<p>}</p>
-<p>}</p>
-<p>EOF</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat &gt; Calculator.java &lt;&lt; EOF
+   public class Calculator {
+       public static void main(String[] args) {
+           int a = 10;
+           int b = 5;
+           
+           System.out.println(&quot;a = &quot; + a);
+           System.out.println(&quot;b = &quot; + b);
+           System.out.println(&quot;a + b = &quot; + (a + b));
+           System.out.println(&quot;a * b = &quot; + (a * b));
+       }
+   }
+   EOF
+</code></pre>
 <p>5. Compile and run:</p>
-<p><code></code><code></code></p>
-<p>javac Calculator.java</p>
-<p>java Calculator</p>
-<p><code></code><code></code></p>
+<pre><code>
+   javac Calculator.java
+   java Calculator
+</code></pre>
 <p>6. List the compiled files:</p>
-<p><code></code><code></code></p>
-<p>ls -l <em>.class</em></p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls -l *.class
+</code></pre>
 <h3>Task 4: Compiling and Running Rust Code</h3>
 <p>Rust is a compiled language known for safety and performance.</p>
 <p>1. Create a simple Rust program:</p>
-<p><code></code><code></code></p>
-<p>cat &gt; main.rs &lt;&lt; EOF</p>
-<p>fn main() {</p>
-<p>println!(&quot;Hello from Rust!&quot;);</p>
-<p>println!(&quot;Running on the Unix command line.&quot;);</p>
-<p>}</p>
-<p>EOF</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat &gt; main.rs &lt;&lt; EOF
+   fn main() {
+       println!(&quot;Hello from Rust!&quot;);
+       println!(&quot;Running on the Unix command line.&quot;);
+   }
+   EOF
+</code></pre>
 <p>2. Compile the Rust code:</p>
-<p><code></code><code></code></p>
-<p>rustc main.rs</p>
-<p><code></code><code></code></p>
+<pre><code>
+   rustc main.rs
+</code></pre>
 <p>This creates an executable file called <code>main</code>.</p>
 <p>3. Run the compiled Rust program:</p>
-<p><code></code><code></code></p>
-<p>./main</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ./main
+</code></pre>
 <p>Note: You need to use <code>./</code> to run executables in the current directory.</p>
 <p>4. Create a more complex Rust program:</p>
-<p><code></code><code></code></p>
-<p>cat &gt; calculator.rs &lt;&lt; EOF</p>
-<p>fn main() {</p>
-<p>let a = 10;</p>
-<p>let b = 5;</p>
-<p>println!(&quot;a = {}&quot;, a);</p>
-<p>println!(&quot;b = {}&quot;, b);</p>
-<p>println!(&quot;a + b = {}&quot;, a + b);</p>
-<p>println!(&quot;a <em> b = {}&quot;, a </em> b);</p>
-<p>}</p>
-<p>EOF</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cat &gt; calculator.rs &lt;&lt; EOF
+   fn main() {
+       let a = 10;
+       let b = 5;
+       
+       println!(&quot;a = {}&quot;, a);
+       println!(&quot;b = {}&quot;, b);
+       println!(&quot;a + b = {}&quot;, a + b);
+       println!(&quot;a * b = {}&quot;, a * b);
+   }
+   EOF
+</code></pre>
 <p>5. Compile and run:</p>
-<p><code></code><code></code></p>
-<p>rustc calculator.rs</p>
-<p>./calculator</p>
-<p><code></code><code></code></p>
+<pre><code>
+   rustc calculator.rs
+   ./calculator
+</code></pre>
 <h3>Task 5: Managing Rust Projects with Cargo</h3>
 <p>For larger Rust projects, use Cargo, Rust's package manager and build system.</p>
 <p>1. Create a new Rust project:</p>
-<p><code></code><code></code></p>
-<p>cargo new my_rust_project</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cargo new my_rust_project
+</code></pre>
 <p>This creates a directory with the project structure.</p>
 <p>2. Enter the project directory:</p>
-<p><code></code><code></code></p>
-<p>cd my_rust_project</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cd my_rust_project
+</code></pre>
 <p>3. View the project structure:</p>
-<p><code></code><code></code></p>
-<p>ls -la</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls -la
+</code></pre>
 <p>You'll see <code>src/main.rs</code> (your code) and <code>Cargo.toml</code> (project configuration).</p>
 <p>4. Build the project:</p>
-<p><code></code><code></code></p>
-<p>cargo build</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cargo build
+</code></pre>
 <p>This compiles your code and creates an executable in the <code>target/debug/</code> directory.</p>
 <p>5. Run the project directly:</p>
-<p><code></code><code></code></p>
-<p>cargo run</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cargo run
+</code></pre>
 <p>This builds and runs the project in one command.</p>
 <p>6. Build an optimised release version:</p>
-<p><code></code><code></code></p>
-<p>cargo build --release</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cargo build --release
+</code></pre>
 <p>This creates a faster binary in <code>target/release/</code>.</p>
 <p>7. Return to your working directory:</p>
-<p><code></code><code></code></p>
-<p>cd ..</p>
-<p><code></code><code></code></p>
+<pre><code>
+   cd ..
+</code></pre>
 <h3>Challenge Task - Section 5</h3>
 <p>Create a multi-language demonstration project:</p>
 <p>1. Create a directory called &quot;code_examples&quot;</p>
@@ -1068,51 +1073,55 @@ img {
 <ul>
   <li>A Python script called &quot;greet.py&quot; that takes a name as input and prints a personalised greeting:</li>
 </ul>
-<p><code></code><code></code></p>
-<p>cat &gt; code_examples/greet.py &lt;&lt; EOF</p>
-<p>name = input(&quot;Enter your name: &quot;)</p>
-<p>print(f&quot;Hello, {name}! Welcome to the multi-language demo.&quot;)</p>
-<p>EOF</p>
-<p><code></code><code></code></p>
+<pre><code>
+    cat &gt; code_examples/greet.py &lt;&lt; EOF
+    name = input(&quot;Enter your name: &quot;)
+    print(f&quot;Hello, {name}! Welcome to the multi-language demo.&quot;)
+    EOF
+</code></pre>
 <ul>
   <li>A Java program called &quot;MathDemo.java&quot; that calculates and displays the area and perimeter of a rectangle:</li>
 </ul>
-<p><code></code><code></code></p>
-<p>cat &gt; code_examples/MathDemo.java &lt;&lt; EOF</p>
-<p>import java.util.Scanner;</p>
-<p>public class MathDemo {</p>
-<p>public static void main(String[] args) {</p>
-<p>Scanner scanner = new Scanner(System.in);</p>
-<p>System.out.print(&quot;Enter length of rectangle: &quot;);</p>
-<p>double length = scanner.nextDouble();</p>
-<p>System.out.print(&quot;Enter width of rectangle: &quot;);</p>
-<p>double width = scanner.nextDouble();</p>
-<p>double area = length <em> width;</em></p>
-<p>double perimeter = 2 <em> (length + width);</em></p>
-<p>System.out.println(&quot;Area: &quot; + area);</p>
-<p>System.out.println(&quot;Perimeter: &quot; + perimeter);</p>
-<p>}</p>
-<p>}</p>
-<p>EOF</p>
-<p><code></code><code></code></p>
+<pre><code>
+    cat &gt; code_examples/MathDemo.java &lt;&lt; EOF
+    import java.util.Scanner;
+
+    public class MathDemo {
+        public static void main(String[] args) {
+            Scanner scanner = new Scanner(System.in);
+            System.out.print(&quot;Enter length of rectangle: &quot;);
+            double length = scanner.nextDouble();
+            System.out.print(&quot;Enter width of rectangle: &quot;);
+            double width = scanner.nextDouble();
+            
+            double area = length * width;
+            double perimeter = 2 * (length + width);
+            
+            System.out.println(&quot;Area: &quot; + area);
+            System.out.println(&quot;Perimeter: &quot; + perimeter);
+        }
+    }
+    EOF
+</code></pre>
 <ul>
   <li>A Rust program called &quot;fibonacci.rs&quot; that calculates the first 10 Fibonacci numbers:</li>
 </ul>
-<p><code></code><code></code></p>
-<p>cat &gt; code_examples/fibonacci.rs &lt;&lt; EOF</p>
-<p>fn main() {</p>
-<p>let mut a = 0;</p>
-<p>let mut b = 1;</p>
-<p>println!(&quot;First 10 Fibonacci numbers:&quot;);</p>
-<p>for _ in 0..10 {</p>
-<p>println!(&quot;{}&quot;, a);</p>
-<p>let temp = a;</p>
-<p>a = b;</p>
-<p>b = temp + b;</p>
-<p>}</p>
-<p>}</p>
-<p>EOF</p>
-<p><code></code><code></code></p>
+<pre><code>
+    cat &gt; code_examples/fibonacci.rs &lt;&lt; EOF
+    fn main() {
+        let mut a = 0;
+        let mut b = 1;
+        
+        println!(&quot;First 10 Fibonacci numbers:&quot;);
+        for _ in 0..10 {
+            println!(&quot;{}&quot;, a);
+            let temp = a;
+            a = b;
+            b = temp + b;
+        }
+    }
+    EOF
+</code></pre>
 <p>3. Compile and run each program, verifying it works correctly</p>
 <p>4. Create a text file called &quot;run_log.txt&quot; that documents what you ran and when</p>
 <p>5. List all source files (.py, .java, .rs) and all compiled files (.class, executables) to show the difference</p>
@@ -1123,280 +1132,303 @@ img {
 <p>Shell scripts are files containing Unix commands that execute one after another. They automate repetitive tasks and are essential for system administration and development workflows.</p>
 <h3>Task 1: Creating and Running Basic Shell Scripts</h3>
 <p>1. Create a simple shell script using nano:</p>
-<p><code></code><code></code></p>
-<p>nano my_script.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   nano my_script.sh
+</code></pre>
 <p>In the editor, type or paste the following:</p>
-<p><code></code><code></code></p>
-<p>#!/bin/bash</p>
-<p>echo &quot;Welcome to shell scripting!&quot;</p>
-<p>echo &quot;This script is running on the Unix command line.&quot;</p>
-<p>pwd</p>
-<p><code></code><code></code></p>
+<pre><code>
+   #!/bin/bash
+   echo &quot;Welcome to shell scripting!&quot;
+   echo &quot;This script is running on the Unix command line.&quot;
+   pwd
+</code></pre>
 <p>The <code>#!/bin/bash</code> line (called a &quot;shebang&quot;) tells Unix to run this script with the bash shell.</p>
 <p>2. Save the file (<code>CTRL + O</code>) and exit nano (<code>CTRL + X</code>).</p>
 <p>3. Make the script executable:</p>
-<p><code></code><code></code></p>
-<p>chmod +x my_script.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   chmod +x my_script.sh
+</code></pre>
 <p>Verify it's executable by checking permissions:</p>
-<p><code></code><code></code></p>
-<p>ls -l my_script.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ls -l my_script.sh
+</code></pre>
 <p>You should see an <code>x</code> in the permissions.</p>
 <p>4. Run the script:</p>
-<p><code></code><code></code></p>
-<p>./my_script.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ./my_script.sh
+</code></pre>
 <h3>Task 2: Using Variables in Shell Scripts</h3>
 <p>Variables store data that your script can use and manipulate.</p>
 <p>1. Edit your shell script using nano:</p>
-<p><code></code><code></code></p>
-<p>nano my_script.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+    nano my_script.sh
+</code></pre>
 <p>2. Add variables to that script:</p>
-<p><code></code><code></code></p>
-<p>PROJECT_NAME=&quot;My Unix Project&quot;</p>
-<p>VERSION=&quot;1.0&quot;</p>
-<p>AUTHOR=&quot;Student&quot;</p>
-<p><code></code><code></code></p>
+<pre><code>
+   PROJECT_NAME=&quot;My Unix Project&quot;
+   VERSION=&quot;1.0&quot;
+   AUTHOR=&quot;Student&quot;
+</code></pre>
 <p>3. Use the variables in echo statements:</p>
-<p><code></code><code></code></p>
-<p>echo &quot;Project: $PROJECT_NAME&quot;</p>
-<p>echo &quot;Version: $VERSION&quot;</p>
-<p>echo &quot;Author: $AUTHOR&quot;</p>
-<p><code></code><code></code></p>
+<pre><code>
+   echo &quot;Project: $PROJECT_NAME&quot;
+   echo &quot;Version: $VERSION&quot;
+   echo &quot;Author: $AUTHOR&quot;
+</code></pre>
 <p>4. Save your script (<code>CTRL + O</code>) and exit nano (<code>CTRL + X</code>)</p>
 <p>5. Then run it again:</p>
-<p><code></code><code></code></p>
-<p>./my_script.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ./my_script.sh
+</code></pre>
 <p>6. Edit again using nano:</p>
-<p><code></code><code></code></p>
-<p>nano my_script.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   nano my_script.sh
+</code></pre>
 <p>7. Create variables in your script that command results are stored in:</p>
-<p><code></code><code></code></p>
-<p>CURRENT_DATE=$(date)</p>
-<p>FILE_COUNT=$(ls -1 | wc -l)</p>
-<p>CURRENT_USER=$USER</p>
-<p>echo &quot;Date: $CURRENT_DATE&quot;</p>
-<p>echo &quot;Number of files: $FILE_COUNT&quot;</p>
-<p>echo &quot;User: $CURRENT_USER&quot;</p>
-<p><code></code><code></code></p>
+<pre><code>
+   CURRENT_DATE=$(date)
+   FILE_COUNT=$(ls -1 | wc -l)
+   CURRENT_USER=$USER
+
+   echo &quot;Date: $CURRENT_DATE&quot;
+   echo &quot;Number of files: $FILE_COUNT&quot;
+   echo &quot;User: $CURRENT_USER&quot;
+</code></pre>
 <p>8. Save and exit nano again, then run it:</p>
-<p><code></code><code></code></p>
-<p>./my_script.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   ./my_script.sh
+</code></pre>
 <h3>Task 3: Using Conditional Statements (if/else)</h3>
 <p>Conditionals let your script make decisions.</p>
 <p>1. Create a new script using nano:</p>
-<p><code></code><code></code></p>
-<p>nano file_checker.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   nano file_checker.sh
+</code></pre>
 <p>2. Create a script with if statements:</p>
-<p><code></code><code></code></p>
-<p>#!/bin/bash</p>
-<h1>Check if a file exists</h1>
-<p>FILENAME=&quot;test_file.txt&quot;</p>
-<p>if [ -f &quot;$FILENAME&quot; ]; then</p>
-<p>echo &quot;File $FILENAME exists.&quot;</p>
-<p>else</p>
-<p>echo &quot;File $FILENAME does not exist.&quot;</p>
-<p>fi</p>
-<h1>Check if a directory exists</h1>
-<p>DIRNAME=&quot;documents&quot;</p>
-<p>if [ -d &quot;$DIRNAME&quot; ]; then</p>
-<p>echo &quot;Directory $DIRNAME exists.&quot;</p>
-<p>else</p>
-<p>echo &quot;Directory $DIRNAME does not exist.&quot;</p>
-<p>fi</p>
-<p><code></code><code></code></p>
+<pre><code>
+   #!/bin/bash
+
+   # Check if a file exists
+   FILENAME=&quot;test_file.txt&quot;
+
+   if [ -f &quot;$FILENAME&quot; ]; then
+       echo &quot;File $FILENAME exists.&quot;
+   else
+       echo &quot;File $FILENAME does not exist.&quot;
+   fi
+
+   # Check if a directory exists
+   DIRNAME=&quot;documents&quot;
+
+   if [ -d &quot;$DIRNAME&quot; ]; then
+       echo &quot;Directory $DIRNAME exists.&quot;
+   else
+       echo &quot;Directory $DIRNAME does not exist.&quot;
+   fi
+</code></pre>
 <p>Inside the script, <code>-f</code> checks for a file and <code>-d</code> checks for a directory.</p>
 <p>3. Save (<code>CTRL + O</code>) and exit (<code>CTRL + X</code>) nano</p>
 <p>4. Run the script:</p>
-<p><code></code><code></code></p>
-<p>chmod +x file_checker.sh</p>
-<p>./file_checker.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   chmod +x file_checker.sh
+   ./file_checker.sh
+</code></pre>
 <p>5. Create a script that compares numbers:</p>
-<p><code></code><code></code></p>
-<p>nano number_compare.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   nano number_compare.sh
+</code></pre>
 <p>In the editor, type or paste:</p>
-<p><code></code><code></code></p>
-<p>#!/bin/bash</p>
-<p>NUM1=10</p>
-<p>NUM2=5</p>
-<p>if [ $NUM1 -gt $NUM2 ]; then</p>
-<p>echo &quot;$NUM1 is greater than $NUM2&quot;</p>
-<p>elif [ $NUM1 -eq $NUM2 ]; then</p>
-<p>echo &quot;$NUM1 equals $NUM2&quot;</p>
-<p>else</p>
-<p>echo &quot;$NUM1 is less than $NUM2&quot;</p>
-<p>fi</p>
-<p><code></code><code></code></p>
+<pre><code>
+   #!/bin/bash
+
+   NUM1=10
+   NUM2=5
+
+   if [ $NUM1 -gt $NUM2 ]; then
+       echo &quot;$NUM1 is greater than $NUM2&quot;
+   elif [ $NUM1 -eq $NUM2 ]; then
+       echo &quot;$NUM1 equals $NUM2&quot;
+   else
+       echo &quot;$NUM1 is less than $NUM2&quot;
+   fi
+</code></pre>
 <p>Inside the script, <code>-gt</code> means greater than, <code>-eq</code> means equal to. Similarly, you can use <code>-lt</code> for less than. Save and exit nano.</p>
 <p>6. Run it:</p>
-<p><code></code><code></code></p>
-<p>chmod +x number_compare.sh</p>
-<p>./number_compare.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   chmod +x number_compare.sh
+   ./number_compare.sh
+</code></pre>
 <h3>Task 4: Using Loops</h3>
 <p>Loops repeat commands multiple times.</p>
 <p>1. Create a script with a for loop:</p>
-<p><code></code><code></code></p>
-<p>nano for_loop_demo.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   nano for_loop_demo.sh
+</code></pre>
 <p>In the editor, type or paste:</p>
-<p><code></code><code></code></p>
-<p>#!/bin/bash</p>
-<p>echo &quot;Counting from 1 to 5:&quot;</p>
-<p>for i in 1 2 3 4 5; do</p>
-<p>echo &quot;Number: $i&quot;</p>
-<p>done</p>
-<p>echo &quot;&quot;</p>
-<p>echo &quot;Listing files:&quot;</p>
-<p>for file in <em>.txt; do</em></p>
-<p>if [ -f &quot;$file&quot; ]; then</p>
-<p>echo &quot;Found: $file&quot;</p>
-<p>fi</p>
-<p>done</p>
-<p><code></code><code></code></p>
+<pre><code>
+   #!/bin/bash
+
+   echo &quot;Counting from 1 to 5:&quot;
+   for i in 1 2 3 4 5; do
+       echo &quot;Number: $i&quot;
+   done
+
+   echo &quot;&quot;
+   echo &quot;Listing files:&quot;
+   for file in *.txt; do
+       if [ -f &quot;$file&quot; ]; then
+           echo &quot;Found: $file&quot;
+       fi
+   done
+</code></pre>
 <p>Save and exit nano.</p>
 <p>2. Run it:</p>
-<p><code></code><code></code></p>
-<p>chmod +x for_loop_demo.sh</p>
-<p>./for_loop_demo.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   chmod +x for_loop_demo.sh
+   ./for_loop_demo.sh
+</code></pre>
 <p>3. Create a script with a while loop:</p>
-<p><code></code><code></code></p>
-<p>nano while_loop_demo.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   nano while_loop_demo.sh
+</code></pre>
 <p>In the editor, type or paste:</p>
-<p><code></code><code></code></p>
-<p>#!/bin/bash</p>
-<p>echo &quot;Countdown from 3:&quot;</p>
-<p>COUNT=3</p>
-<p>while [ $COUNT -gt 0 ]; do</p>
-<p>echo &quot;$COUNT...&quot;</p>
-<p>COUNT=$((COUNT - 1))</p>
-<p>done</p>
-<p>echo &quot;Blast off!&quot;</p>
-<p><code></code><code></code></p>
+<pre><code>
+   #!/bin/bash
+
+   echo &quot;Countdown from 3:&quot;
+   COUNT=3
+   while [ $COUNT -gt 0 ]; do
+       echo &quot;$COUNT...&quot;
+       COUNT=$((COUNT - 1))
+   done
+   echo &quot;Blast off!&quot;
+</code></pre>
 <p>Save and exit nano.</p>
 <p>4. Run it:</p>
-<p><code></code><code></code></p>
-<p>chmod +x while_loop_demo.sh</p>
-<p>./while_loop_demo.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   chmod +x while_loop_demo.sh
+   ./while_loop_demo.sh
+</code></pre>
 <h3>Task 5: Creating Functions in Shell Scripts</h3>
 <p>Functions let you write reusable blocks of code.</p>
 <p>1. Create a script with functions:</p>
-<p><code></code><code></code></p>
-<p>nano functions_demo.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   nano functions_demo.sh
+</code></pre>
 <p>In the editor, type or paste:</p>
-<p><code></code><code></code></p>
-<p>#!/bin/bash</p>
-<h1>Define a function</h1>
-<p>greet() {</p>
-<p>echo &quot;Hello! Welcome to this shell script.&quot;</p>
-<p>}</p>
-<h1>Define a function with parameters</h1>
-<p>add_numbers() {</p>
-<p>local sum=$(($1 + $2))</p>
-<p>echo &quot;The sum of $1 and $2 is $sum&quot;</p>
-<p>}</p>
-<h1>Call the functions</h1>
-<p>greet</p>
-<p>add_numbers 5 3</p>
-<p>add_numbers 10 20</p>
-<p><code></code><code></code></p>
+<pre><code>
+   #!/bin/bash
+
+   # Define a function
+   greet() {
+       echo &quot;Hello! Welcome to this shell script.&quot;
+   }
+
+   # Define a function with parameters
+   add_numbers() {
+       local sum=$(($1 + $2))
+       echo &quot;The sum of $1 and $2 is $sum&quot;
+   }
+
+   # Call the functions
+   greet
+   add_numbers 5 3
+   add_numbers 10 20
+</code></pre>
 <p>Save and exit nano.</p>
 <p>2. Run it:</p>
-<p><code></code><code></code></p>
-<p>chmod +x functions_demo.sh</p>
-<p>./functions_demo.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   chmod +x functions_demo.sh
+   ./functions_demo.sh
+</code></pre>
 <p>3. Create a practical script that uses functions:</p>
-<p><code></code><code></code></p>
-<p>nano file_operations.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   nano file_operations.sh
+</code></pre>
 <p>In the editor, type or paste:</p>
-<p><code></code><code></code></p>
-<p>#!/bin/bash</p>
-<h1>Function to count files</h1>
-<p>count_files() {</p>
-<p>local count=$(ls -1 $1 | wc -l)</p>
-<p>echo &quot;Directory $1 contains $count items&quot;</p>
-<p>}</p>
-<h1>Function to show file details</h1>
-<p>show_details() {</p>
-<p>echo &quot;Details of $1:&quot;</p>
-<p>ls -lh $1</p>
-<p>}</p>
-<h1>Use the functions</h1>
-<p>count_files .</p>
-<p>show_details .</p>
-<p><code></code><code></code></p>
+<pre><code>
+   #!/bin/bash
+
+   # Function to count files
+   count_files() {
+       local count=$(ls -1 $1 | wc -l)
+       echo &quot;Directory $1 contains $count items&quot;
+   }
+
+   # Function to show file details
+   show_details() {
+       echo &quot;Details of $1:&quot;
+       ls -lh $1
+   }
+
+   # Use the functions
+   count_files .
+   show_details .
+</code></pre>
 <p>Save and exit nano.</p>
 <p>4. Run it:</p>
-<p><code></code><code></code></p>
-<p>chmod +x file_operations.sh</p>
-<p>./file_operations.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   chmod +x file_operations.sh
+   ./file_operations.sh
+</code></pre>
 <h3>Task 6: Practical Script Examples</h3>
 <p>1. Create a backup script:</p>
-<p><code></code><code></code></p>
-<p>nano backup.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   nano backup.sh
+</code></pre>
 <p>In the editor, type or paste:</p>
-<p><code></code><code></code></p>
-<p>#!/bin/bash</p>
-<h1>Create a backup of a directory</h1>
-<p>SOURCE_DIR=&quot;documents&quot;</p>
-<p>BACKUP_DIR=&quot;documents_backup_$(date +%Y%m%d_%H%M%S)&quot;</p>
-<p>if [ -d &quot;$SOURCE_DIR&quot; ]; then</p>
-<p>cp -r &quot;$SOURCE_DIR&quot; &quot;$BACKUP_DIR&quot;</p>
-<p>echo &quot;Backup created: $BACKUP_DIR&quot;</p>
-<p>else</p>
-<p>echo &quot;Source directory not found!&quot;</p>
-<p>fi</p>
-<p><code></code><code></code></p>
+<pre><code>
+   #!/bin/bash
+
+   # Create a backup of a directory
+   SOURCE_DIR=&quot;documents&quot;
+   BACKUP_DIR=&quot;documents_backup_$(date +%Y%m%d_%H%M%S)&quot;
+
+   if [ -d &quot;$SOURCE_DIR&quot; ]; then
+       cp -r &quot;$SOURCE_DIR&quot; &quot;$BACKUP_DIR&quot;
+       echo &quot;Backup created: $BACKUP_DIR&quot;
+   else
+       echo &quot;Source directory not found!&quot;
+   fi
+</code></pre>
 <p>Save and exit nano.</p>
 <p>2. Make it executable and run it:</p>
-<p><code></code><code></code></p>
-<p>chmod +x backup.sh</p>
-<p>./backup.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   chmod +x backup.sh
+   ./backup.sh
+</code></pre>
 <p>3. Create a script that creates a directory structure for a project (taking the project name as a parameter):</p>
-<p><code></code><code></code></p>
-<p>nano create_project.sh</p>
-<p><code></code><code></code></p>
+<pre><code>
+   nano create_project.sh
+</code></pre>
 <p>In the editor, type or paste:</p>
-<p><code></code><code></code></p>
-<p>#!/bin/bash</p>
-<p>PROJECT_NAME=&quot;$1&quot;</p>
-<p>if [ -z &quot;$PROJECT_NAME&quot; ]; then</p>
-<p>echo &quot;Usage: $0 &lt;project_name&gt;&quot;</p>
-<p>exit 1</p>
-<p>fi</p>
-<p>echo &quot;Creating project structure for $PROJECT_NAME...&quot;</p>
-<p>mkdir -p &quot;$PROJECT_NAME/src&quot;</p>
-<p>mkdir -p &quot;$PROJECT_NAME/build&quot;</p>
-<p>mkdir -p &quot;$PROJECT_NAME/docs&quot;</p>
-<p>mkdir -p &quot;$PROJECT_NAME/tests&quot;</p>
-<p>echo &quot;Project structure created in ./$PROJECT_NAME&quot;</p>
-<p>echo &quot;Structure:&quot;</p>
-<p>ls -la &quot;$PROJECT_NAME&quot;</p>
-<p><code></code><code></code></p>
+<pre><code>
+   #!/bin/bash
+
+   PROJECT_NAME=&quot;$1&quot;
+
+   if [ -z &quot;$PROJECT_NAME&quot; ]; then
+       echo &quot;Usage: $0 &lt;project_name&gt;&quot;
+       exit 1
+   fi
+
+   echo &quot;Creating project structure for $PROJECT_NAME...&quot;
+
+   mkdir -p &quot;$PROJECT_NAME/src&quot;
+   mkdir -p &quot;$PROJECT_NAME/build&quot;
+   mkdir -p &quot;$PROJECT_NAME/docs&quot;
+   mkdir -p &quot;$PROJECT_NAME/tests&quot;
+
+   echo &quot;Project structure created in ./$PROJECT_NAME&quot;
+   echo &quot;Structure:&quot;
+   ls -la &quot;$PROJECT_NAME&quot;
+</code></pre>
 <p>Save and exit nano.</p>
 <p>4. Run it:</p>
-<p><code></code><code></code></p>
-<p>chmod +x create_project.sh</p>
-<p>./create_project.sh my_project</p>
-<p><code></code><code></code></p>
+<pre><code>
+   chmod +x create_project.sh
+   ./create_project.sh my_project
+</code></pre>
 <h3>Challenge Task - Section 6</h3>
 <p>Create a comprehensive system administration script:</p>
 <p>1. Create a script called &quot;file_analyser.sh&quot; that:</p>
@@ -1420,39 +1452,39 @@ img {
 <h2>Additional Tips and Tricks</h2>
 <h3>Using the Manual Command</h3>
 <p>The <code>man</code> command provides documentation for any command:</p>
-<p><code></code><code></code></p>
-<p>man ls</p>
-<p>man cd</p>
-<p>man chmod</p>
-<p><code></code><code></code></p>
+<pre><code>
+man ls
+man cd
+man chmod
+</code></pre>
 <p>Press <code>Space</code> to scroll down, <code>b</code> to go back, and <code>q</code> to quit.</p>
 <h3>Viewing Command History</h3>
 <p>See all commands you've typed:</p>
-<p><code></code><code></code></p>
-<p>history</p>
-<p><code></code><code></code></p>
+<pre><code>
+history
+</code></pre>
 <p>Or search through history:</p>
-<p><code></code><code></code></p>
-<p>history | grep &quot;command_name&quot;</p>
-<p><code></code><code></code></p>
+<pre><code>
+history | grep &quot;command_name&quot;
+</code></pre>
 <p>Use <code>!</code> to repeat commands:</p>
-<p><code></code><code></code></p>
-<p>!ls    # Repeats the last ls command</p>
-<p><code></code><code></code></p>
+<pre><code>
+!ls    # Repeats the last ls command
+</code></pre>
 <h3>Clearing the Terminal</h3>
 <p>Clear the screen:</p>
-<p><code></code><code></code></p>
-<p>clear</p>
-<p><code></code><code></code></p>
+<pre><code>
+clear
+</code></pre>
 <h3>Finding Files and Directories</h3>
 <p>Search for files by name:</p>
-<p><code></code><code></code></p>
-<p>find /path -name &quot;filename&quot;</p>
-<p><code></code><code></code></p>
+<pre><code>
+find /path -name &quot;filename&quot;
+</code></pre>
 <p>Search in current directory:</p>
-<p><code></code><code></code></p>
-<p>find . -name &quot;<em>.txt&quot;</em></p>
-<p><code></code><code></code></p>
+<pre><code>
+find . -name &quot;*.txt&quot;
+</code></pre>
 <h3>Helpful Keyboard Shortcuts</h3>
 <ul>
   <li><code>Ctrl+C</code> - Stop a running command</li>
