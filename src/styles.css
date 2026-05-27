@@ -178,6 +178,17 @@ pre {
     padding: 0.75em;
 }
 
+pre.syntax-code {
+    border-color: #44475a;
+    border-radius: 6px;
+    background: #282a36;
+}
+
+pre.syntax-code code {
+    background: transparent;
+    padding: 0;
+}
+
 table {
     border-collapse: collapse;
     width: 100%;

@@ -14,7 +14,7 @@ As explained in the lectures, Raptor is our own Kent Unix server for all Computi
 2. A command prompt window should appear. It may look slightly different depending on your system but will perform the same as the interface is text-based from here
 
 3. Now we will connect to Raptor, type:
-   ```
+   ```bash
    ssh abc12@raptor.kent.ac.uk
    ```
    Replacing `abc12` with your Kent ID, and then hit enter. If it prompts you for whether you trust this connection or a similar message, press `y` or type `yes` and hit enter
@@ -31,7 +31,7 @@ The Unix file system is organised hierarchically, like folders on your computer.
 ### Task 1: Current Directory and Creating Your Workspace
 
 You should now see a terminal entry ready for a command:
-```
+```bash
 abc12@raptor [~] $
 ```
 
@@ -772,7 +772,7 @@ The Unix command line is where programmers compile, run, and manage code project
 Python is an interpreted language, meaning you can run it directly without compilation.
 
 1. Create a simple Python script:
-   ```
+   ```bash
    cat > hello.py << EOF
    print("Hello from Python!")
    print("This is running on the Unix command line.")
@@ -783,13 +783,13 @@ Python is an interpreted language, meaning you can run it directly without compi
    ```
 
 2. Run the Python script:
-   ```
+   ```bash
    python3 hello.py
    ```
    Follow the prompt to enter your name.
 
 3. Create a Python script that does some calculations:
-   ```
+   ```bash
    cat > calculator.py << EOF
    numbers = [1, 2, 3, 4, 5]
    total = sum(numbers)
@@ -802,12 +802,12 @@ Python is an interpreted language, meaning you can run it directly without compi
    ```
 
 4. Run it:
-   ```
+   ```bash
    python3 calculator.py
    ```
 
 5. To see all Python scripts in your directory:
-   ```
+   ```bash
    ls -l *.py
    ```
 
@@ -816,23 +816,23 @@ Python is an interpreted language, meaning you can run it directly without compi
 Virtual environments let you isolate project dependencies so they don't conflict with system-wide packages. Here we can use Python's  package manager called `pip` that lets you install additional libraries.
 
 1. Create a virtual environment called "myenv":
-   ```
+   ```bash
    python3 -m venv myenv
    ```
 
 2. Activate the virtual environment:
-   ```
+   ```bash
    source myenv/bin/activate
    ```
    Notice your terminal prompt changes to show `(myenv)` at the beginning.
 
 3. Inside the virtual environment, install a package (requests - for making web requests):
-   ```
+   ```bash
    pip3 install requests
    ```
 
 4. Create a Python script that uses the installed package:
-   ```
+   ```bash
    cat > check_status.py << EOF
    import requests
    
@@ -844,12 +844,12 @@ Virtual environments let you isolate project dependencies so they don't conflict
    ```
 
 5. Run it:
-   ```
+   ```bash
    python3 check_status.py
    ```
 
 6. Deactivate the virtual environment when done:
-   ```
+   ```bash
    deactivate
    ```
    The `(myenv)` prefix disappears from your prompt.
@@ -859,7 +859,7 @@ Virtual environments let you isolate project dependencies so they don't conflict
 Java is a compiled language, meaning you must compile code before running it.
 
 1. Create a simple Java program:
-   ```
+   ```bash
    cat > HelloWorld.java << EOF
    public class HelloWorld {
        public static void main(String[] args) {
@@ -872,19 +872,19 @@ Java is a compiled language, meaning you must compile code before running it.
    **Important**: Java filenames must match the class name exactly, including capitalisation.
 
 2. Compile the Java code:
-   ```
+   ```bash
    javac HelloWorld.java
    ```
    This creates a file called `HelloWorld.class`.
 
 3. Run the compiled Java program:
-   ```
+   ```bash
    java HelloWorld
    ```
    Note: You use the class name without the .class extension.
 
 4. Create a more complex Java program:
-   ```
+   ```bash
    cat > Calculator.java << EOF
    public class Calculator {
        public static void main(String[] args) {
@@ -901,13 +901,13 @@ Java is a compiled language, meaning you must compile code before running it.
    ```
 
 5. Compile and run:
-   ```
+   ```bash
    javac Calculator.java
    java Calculator
    ```
 
 6. List the compiled files:
-   ```
+   ```bash
    ls -l *.class
    ```
 
@@ -916,7 +916,7 @@ Java is a compiled language, meaning you must compile code before running it.
 Rust is a compiled language known for safety and performance.
 
 1. Create a simple Rust program:
-   ```
+   ```bash
    cat > main.rs << EOF
    fn main() {
        println!("Hello from Rust!");
@@ -926,19 +926,19 @@ Rust is a compiled language known for safety and performance.
    ```
 
 2. Compile the Rust code:
-   ```
+   ```bash
    rustc main.rs
    ```
    This creates an executable file called `main`.
 
 3. Run the compiled Rust program:
-   ```
+   ```bash
    ./main
    ```
    Note: You need to use `./` to run executables in the current directory.
 
 4. Create a more complex Rust program:
-   ```
+   ```bash
    cat > calculator.rs << EOF
    fn main() {
        let a = 10;
@@ -953,7 +953,7 @@ Rust is a compiled language known for safety and performance.
    ```
 
 5. Compile and run:
-   ```
+   ```bash
    rustc calculator.rs
    ./calculator
    ```

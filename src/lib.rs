@@ -1,4 +1,18 @@
+use std::io::Cursor;
+use std::sync::OnceLock;
+
+use syntect::highlighting::Theme;
+use syntect::html::{ClassStyle, ClassedHTMLGenerator, css_for_theme_with_class_style};
+use syntect::parsing::{SyntaxReference, SyntaxSet};
+use syntect::util::LinesWithEndings;
 use wasm_bindgen::prelude::*;
+
+const DRACULA_THEME: &str = include_str!("dracula.tmTheme");
+const SYNTAX_CLASS_PREFIX: &str = "syntax-";
+
+static SYNTAX_SET: OnceLock<SyntaxSet> = OnceLock::new();
+static SYNTAX_THEME: OnceLock<Theme> = OnceLock::new();
+static SYNTAX_CSS: OnceLock<String> = OnceLock::new();
 
 pub fn document_builder(md_text: String) -> String {
     let mut html_text = String::new();
@@ -10,22 +24,20 @@ pub fn document_builder(md_text: String) -> String {
     let mut in_paragraph = false;
     let mut in_list = false;
 
-    // Fenced code block state
     let mut in_code_block = false;
     let mut code_fence_char: char = '`';
     let mut code_fence_len: usize = 0;
     let mut code_lang: Option<String> = None;
+    let mut code_block_buffer = String::new();
 
     for line in md_text.lines() {
         let trimmed = line.trim();
 
-        // Handle fenced code block opening: ``` or ~~~
         if !in_code_block {
             if !trimmed.is_empty() && (trimmed.starts_with("```") || trimmed.starts_with("~~~")) {
                 let fence_char = trimmed.chars().next().unwrap();
                 let fence_len = trimmed.chars().take_while(|&c| c == fence_char).count();
                 if fence_len >= 3 {
-                    // Close any open paragraph or list before starting a code block
                     if in_paragraph {
                         html_text.push_str("</p>\n");
                         in_paragraph = false;
@@ -38,26 +50,12 @@ pub fn document_builder(md_text: String) -> String {
                     in_code_block = true;
                     code_fence_char = fence_char;
                     code_fence_len = fence_len;
-                    let rest = trimmed[fence_len..].trim();
-                    code_lang = if rest.is_empty() {
-                        None
-                    } else {
-                        Some(rest.to_string())
-                    };
-
-                    if let Some(lang) = &code_lang {
-                        html_text.push_str(
-                            format!("<pre><code class=\"language-{}\">\n", html_escape(lang))
-                                .as_str(),
-                        );
-                    } else {
-                        html_text.push_str("<pre><code>\n");
-                    }
+                    code_lang = extract_code_language(&trimmed[fence_len..]);
+                    code_block_buffer.clear();
                     continue;
                 }
             }
         } else {
-            // Currently inside a fenced code block: look for closing fence
             if !trimmed.is_empty() {
                 let closing_count = trimmed
                     .chars()
@@ -68,26 +66,19 @@ pub fn document_builder(md_text: String) -> String {
                     .skip(closing_count)
                     .all(|c| c.is_whitespace());
                 if closing_count >= code_fence_len && rest_ok {
-                    // Close code block
-                    html_text.push_str("</code></pre>\n");
+                    html_text.push_str(
+                        render_code_block(&code_block_buffer, code_lang.as_deref()).as_str(),
+                    );
                     in_code_block = false;
                     code_fence_len = 0;
                     code_lang = None;
+                    code_block_buffer.clear();
                     continue;
                 }
             }
 
-            // Emit code line (escape HTML characters but preserve spacing)
-            for ch in line.chars() {
-                match ch {
-                    '&' => html_text.push_str("&amp;"),
-                    '<' => html_text.push_str("&lt;"),
-                    '>' => html_text.push_str("&gt;"),
-                    '"' => html_text.push_str("&quot;"),
-                    _ => html_text.push(ch),
-                }
-            }
-            html_text.push('\n');
+            code_block_buffer.push_str(line);
+            code_block_buffer.push('\n');
             continue;
         }
 
@@ -124,45 +115,7 @@ pub fn document_builder(md_text: String) -> String {
             ("", trimmed)
         };
 
-        let mut escaped = String::new();
-        let mut chars = content.chars().peekable();
-        let mut bold = false;
-        let mut italic = false;
-        let mut code = false;
-
-        while let Some(ch) = chars.next() {
-            if ch == '*' {
-                if let Some('*') = chars.peek() {
-                    chars.next();
-                    escaped.push_str(if bold { "</strong>" } else { "<strong>" });
-                    bold = !bold;
-                } else {
-                    escaped.push_str(if italic { "</em>" } else { "<em>" });
-                    italic = !italic;
-                }
-            } else if ch == '`' {
-                escaped.push_str(if code { "</code>" } else { "<code>" });
-                code = !code;
-            } else {
-                match ch {
-                    '&' => escaped.push_str("&amp;"),
-                    '<' => escaped.push_str("&lt;"),
-                    '>' => escaped.push_str("&gt;"),
-                    '"' => escaped.push_str("&quot;"),
-                    _ => escaped.push(ch),
-                }
-            }
-        }
-
-        if bold {
-            escaped.push_str("</strong>");
-        }
-        if italic {
-            escaped.push_str("</em>");
-        }
-        if code {
-            escaped.push_str("</code>");
-        }
+        let escaped = render_inline_markdown(content);
 
         if !tag.is_empty() {
             if in_list {
@@ -179,47 +132,7 @@ pub fn document_builder(md_text: String) -> String {
                 in_list = true;
             }
 
-            let mut item_escaped = String::new();
-            let mut chars = rest.chars().peekable();
-            let mut bold = false;
-            let mut italic = false;
-            let mut code = false;
-
-            while let Some(ch) = chars.next() {
-                if ch == '*' {
-                    if let Some('*') = chars.peek() {
-                        chars.next();
-                        item_escaped.push_str(if bold { "</strong>" } else { "<strong>" });
-                        bold = !bold;
-                    } else {
-                        item_escaped.push_str(if italic { "</em>" } else { "<em>" });
-                        italic = !italic;
-                    }
-                } else if ch == '`' {
-                    item_escaped.push_str(if code { "</code>" } else { "<code>" });
-                    code = !code;
-                } else {
-                    match ch {
-                        '&' => item_escaped.push_str("&amp;"),
-                        '<' => item_escaped.push_str("&lt;"),
-                        '>' => item_escaped.push_str("&gt;"),
-                        '"' => item_escaped.push_str("&quot;"),
-                        _ => item_escaped.push(ch),
-                    }
-                }
-            }
-
-            if bold {
-                item_escaped.push_str("</strong>");
-            }
-            if italic {
-                item_escaped.push_str("</em>");
-            }
-            if code {
-                item_escaped.push_str("</code>");
-            }
-
-            html_text.push_str(format!("  <li>{}</li>\n", item_escaped).as_str());
+            html_text.push_str(format!("  <li>{}</li>\n", render_inline_markdown(rest)).as_str());
         } else {
             if in_list {
                 html_text.push_str("</ul>\n");
@@ -232,7 +145,7 @@ pub fn document_builder(md_text: String) -> String {
     }
 
     if in_code_block {
-        html_text.push_str("</code></pre>\n");
+        html_text.push_str(render_code_block(&code_block_buffer, code_lang.as_deref()).as_str());
     }
     if in_paragraph {
         html_text.push_str("</p>\n");
@@ -242,6 +155,116 @@ pub fn document_builder(md_text: String) -> String {
     }
     html_text.push_str("\n</body>\n</html>");
     html_text
+}
+
+fn render_inline_markdown(content: &str) -> String {
+    let mut escaped = String::new();
+    let mut chars = content.chars().peekable();
+    let mut bold = false;
+    let mut italic = false;
+    let mut code = false;
+
+    while let Some(ch) = chars.next() {
+        if ch == '*' {
+            if let Some('*') = chars.peek() {
+                chars.next();
+                escaped.push_str(if bold { "</strong>" } else { "<strong>" });
+                bold = !bold;
+            } else {
+                escaped.push_str(if italic { "</em>" } else { "<em>" });
+                italic = !italic;
+            }
+        } else if ch == '`' {
+            escaped.push_str(if code { "</code>" } else { "<code>" });
+            code = !code;
+        } else {
+            match ch {
+                '&' => escaped.push_str("&amp;"),
+                '<' => escaped.push_str("&lt;"),
+                '>' => escaped.push_str("&gt;"),
+                '"' => escaped.push_str("&quot;"),
+                _ => escaped.push(ch),
+            }
+        }
+    }
+
+    if bold {
+        escaped.push_str("</strong>");
+    }
+    if italic {
+        escaped.push_str("</em>");
+    }
+    if code {
+        escaped.push_str("</code>");
+    }
+
+    escaped
+}
+
+fn render_code_block(code: &str, code_lang: Option<&str>) -> String {
+    if let Some(lang) = code_lang {
+        if let Some(syntax) = syntax_set().find_syntax_by_token(lang) {
+            if let Some(highlighted) = render_highlighted_code_block(code, lang, syntax) {
+                return highlighted;
+            }
+        }
+    }
+
+    render_plain_code_block(code, code_lang)
+}
+
+fn render_highlighted_code_block(
+    code: &str,
+    code_lang: &str,
+    syntax: &SyntaxReference,
+) -> Option<String> {
+    let mut generator = ClassedHTMLGenerator::new_with_class_style(
+        syntax,
+        syntax_set(),
+        ClassStyle::SpacedPrefixed {
+            prefix: SYNTAX_CLASS_PREFIX,
+        },
+    );
+
+    for line in LinesWithEndings::from(code) {
+        generator
+            .parse_html_for_line_which_includes_newline(line)
+            .ok()?;
+    }
+
+    let language_class = format!(" language-{}", html_escape(code_lang));
+    Some(format!(
+        "<pre class=\"syntax-code syntax-highlight{language_class}\">{}</pre>\n",
+        generator.finalize()
+    ))
+}
+
+fn render_plain_code_block(code: &str, code_lang: Option<&str>) -> String {
+    let mut block = String::new();
+
+    if let Some(lang) = code_lang {
+        block.push_str(format!("<pre><code class=\"language-{}\">\n", html_escape(lang)).as_str());
+    } else {
+        block.push_str("<pre><code>\n");
+    }
+
+    block.push_str(html_escape(code).as_str());
+    block.push_str("</code></pre>\n");
+    block
+}
+
+fn extract_code_language(info_string: &str) -> Option<String> {
+    let token = info_string.split_whitespace().next()?.trim();
+    let token = token
+        .trim_matches(|c| matches!(c, '{' | '}' | '.'))
+        .strip_prefix("language-")
+        .unwrap_or(token);
+
+    if token.is_empty() {
+        None
+    } else {
+        Some(token.to_string())
+    }
 }
 
 fn html_escape(s: &str) -> String {
@@ -259,10 +282,58 @@ fn html_escape(s: &str) -> String {
 }
 
 fn get_css() -> String {
-    std::fs::read_to_string("src/styles.css").unwrap_or_default()
+    let mut css = String::from(include_str!("styles.css"));
+    css.push('\n');
+    css.push_str(highlight_css());
+    css
+}
+
+fn highlight_css() -> &'static str {
+    SYNTAX_CSS.get_or_init(|| {
+        css_for_theme_with_class_style(
+            dracula_theme(),
+            ClassStyle::SpacedPrefixed {
+                prefix: SYNTAX_CLASS_PREFIX,
+            },
+        )
+        .unwrap_or_default()
+    })
+}
+
+fn syntax_set() -> &'static SyntaxSet {
+    SYNTAX_SET.get_or_init(SyntaxSet::load_defaults_newlines)
+}
+
+fn dracula_theme() -> &'static Theme {
+    SYNTAX_THEME.get_or_init(|| {
+        let mut reader = Cursor::new(DRACULA_THEME.as_bytes());
+        syntect::highlighting::ThemeSet::load_from_reader(&mut reader).unwrap_or_default()
+    })
 }
 
 #[wasm_bindgen]
 pub fn document_builder_wasm(md_text: String) -> String {
     document_builder(md_text)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::document_builder;
+
+    #[test]
+    fn highlights_language_tagged_code_blocks() {
+        let html = document_builder(
+            "```rust\nfn main() {\n    let greeting = \"hello\";\n}\n```".to_string(),
+        );
+
+        assert!(html.contains("<pre class=\"syntax-code syntax-highlight language-rust\">"));
+        assert!(html.contains(".syntax-code {"));
+    }
+
+    #[test]
+    fn leaves_untyped_fenced_code_blocks_plain() {
+        let html = document_builder("```\nplain text\n```".to_string());
+
+        assert!(html.contains("<pre><code>\nplain text\n</code></pre>"));
+    }
 }
