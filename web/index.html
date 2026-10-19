@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="emd-token" content="__EMD_TOKEN__" />
+  <title>EasyMarkDoc</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231d4ed8'/><text x='16' y='22' font-size='15' font-family='Arial' font-weight='700' fill='white' text-anchor='middle'>M↓</text></svg>" />
+  <link rel="stylesheet" href="/assets/vendor/codemirror/codemirror.css" />
+  <link rel="stylesheet" href="/assets/styles.css" />
+  <script src="/assets/vendor/codemirror/codemirror.js"></script>
+  <script src="/assets/vendor/codemirror/overlay.js"></script>
+  <script src="/assets/vendor/codemirror/xml.js"></script>
+  <script src="/assets/vendor/codemirror/markdown.js"></script>
+  <script src="/assets/vendor/codemirror/gfm.js"></script>
+  <script src="/assets/vendor/codemirror/css.js"></script>
+  <script src="/assets/vendor/codemirror/continuelist.js"></script>
+  <script src="/assets/vendor/codemirror/placeholder.js"></script>
+  <script src="/assets/vendor/codemirror/searchcursor.js"></script>
+  <script type="module" src="/assets/js/app.js"></script>
+</head>
+<body>
+  <header class="titlebar">
+    <div class="brand"><span class="logo">M↓</span> EasyMarkDoc</div>
+    <nav class="menubar">
+      <div class="menu">
+        <button type="button" class="menu-button">File</button>
+        <div class="menu-list" hidden>
+          <button type="button" data-cmd="new">New document</button>
+          <button type="button" data-cmd="upload">Upload Markdown…</button>
+          <button type="button" data-cmd="open-disk">Open from disk…</button>
+          <hr />
+          <button type="button" data-cmd="save-md">Save Markdown<kbd>Ctrl+S</kbd></button>
+          <button type="button" data-cmd="save-md-as">Save Markdown to folder…</button>
+          <button type="button" data-cmd="download-md">Download Markdown</button>
+        </div>
+      </div>
+      <div class="menu">
+        <button type="button" class="menu-button">Theme</button>
+        <div class="menu-list" hidden>
+          <button type="button" data-cmd="upload-css">Load theme CSS…</button>
+          <button type="button" data-cmd="open-css-disk">Open theme from disk…</button>
+          <hr />
+          <button type="button" data-cmd="save-css">Save theme to folder…</button>
+          <button type="button" data-cmd="download-css">Download theme CSS</button>
+          <hr />
+          <button type="button" data-cmd="reset-css">Reset to default theme</button>
+          <button type="button" data-cmd="show-css">Edit theme CSS</button>
+        </div>
+      </div>
+      <div class="menu">
+        <button type="button" class="menu-button">Export</button>
+        <div class="menu-list" hidden>
+          <button type="button" data-cmd="save-pdf">Save PDF to folder…<kbd>Ctrl+Shift+S</kbd></button>
+          <button type="button" data-cmd="download-pdf">Download PDF</button>
+          <button type="button" data-cmd="print-pdf">Open PDF in new tab</button>
+          <hr />
+          <button type="button" data-cmd="save-html">Save HTML to folder…</button>
+        </div>
+      </div>
+    </nav>
+    <input id="doc-name" class="doc-name" type="text" spellcheck="false" title="Document name (used for saved files)" />
+    <span id="dirty" class="dirty" title="Unsaved changes" hidden>●</span>
+    <div class="titlebar-spacer"></div>
+    <button type="button" class="primary" data-cmd="save-pdf">Save PDF</button>
+    <button type="button" class="secondary" data-cmd="download-pdf" title="Download PDF">⤓</button>
+  </header>
+
+  <section class="ribbon">
+    <div class="ribbon-tabs" id="ribbon-tabs" role="tablist"></div>
+    <div class="ribbon-panels" id="ribbon-panels"></div>
+  </section>
+
+  <main class="workspace" id="workspace">
+    <section class="pane editor-pane" id="editor-pane">
+      <div class="pane-tabs">
+        <button type="button" class="pane-tab active" data-editor="markdown">Document</button>
+        <button type="button" class="pane-tab" data-editor="css">Theme CSS</button>
+        <span class="pane-tabs-spacer"></span>
+        <span class="pane-info" id="file-path"></span>
+      </div>
+      <div class="editor-host" id="markdown-editor"></div>
+      <div class="editor-host" id="css-editor" hidden></div>
+    </section>
+    <div class="splitter" id="splitter" role="separator" aria-orientation="vertical" tabindex="0"></div>
+    <section class="pane preview-pane">
+      <div class="pane-tabs">
+        <div class="segmented" id="mode-toggle" role="group" aria-label="Preview mode">
+          <button type="button" data-mode="pdf" title="Exact PDF rendered by Chromium">PDF</button>
+          <button type="button" data-mode="paged" title="Fast paginated HTML preview">Pages (fast)</button>
+        </div>
+        <span class="pane-tabs-spacer"></span>
+        <select id="zoom" title="Zoom">
+          <option value="fit">Fit width</option>
+          <option value="50">50%</option>
+          <option value="75">75%</option>
+          <option value="100">100%</option>
+          <option value="125">125%</option>
+          <option value="150">150%</option>
+          <option value="200">200%</option>
+        </select>
+        <button type="button" class="icon-button" id="refresh" title="Refresh preview">⟳</button>
+      </div>
+      <div class="preview-host" id="preview"></div>
+    </section>
+  </main>
+
+  <footer class="statusbar">
+    <span id="status-render">Starting…</span>
+    <span id="status-pages"></span>
+    <span class="titlebar-spacer"></span>
+    <span id="status-words"></span>
+    <span id="status-engine" title="PDF engine"></span>
+  </footer>
+
+  <input type="file" id="upload-md" accept=".md,.markdown,.mdown,.txt,text/markdown" hidden />
+  <input type="file" id="upload-css" accept=".css,text/css" hidden />
+
+  <dialog id="picker" class="picker">
+    <form method="dialog" class="picker-form">
+      <h2 id="picker-title">Choose a folder</h2>
+      <div class="picker-path">
+        <button type="button" id="picker-up" title="Parent folder">↑</button>
+        <button type="button" id="picker-home" title="Home folder">⌂</button>
+        <input type="text" id="picker-path" spellcheck="false" />
+        <button type="button" id="picker-go">Go</button>
+      </div>
+      <ul class="picker-list" id="picker-list"></ul>
+      <label class="picker-name" id="picker-name-row">File name <input type="text" id="picker-name" spellcheck="false" /></label>
+      <p class="picker-error" id="picker-error" hidden></p>
+      <div class="picker-actions">
+        <button type="button" value="cancel" id="picker-cancel">Cancel</button>
+        <button type="submit" class="primary" id="picker-ok">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" hidden></div>
+</body>
+</html>

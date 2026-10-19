@@ -1,0 +1,168 @@
+{
+  "name": "easymarkdoc",
+  "displayName": "EasyMarkDoc",
+  "description": "Live PDF preview and export for Markdown, styled with customisable CSS themes",
+  "version": "0.2.0",
+  "publisher": "easymarkdoc",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Visualization"
+  ],
+  "keywords": [
+    "markdown",
+    "pdf",
+    "preview",
+    "export",
+    "css"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "easymarkdoc.openPreview",
+        "title": "Open PDF Preview to the Side",
+        "category": "EasyMarkDoc",
+        "icon": "$(file-pdf)"
+      },
+      {
+        "command": "easymarkdoc.exportPdf",
+        "title": "Export PDF",
+        "category": "EasyMarkDoc"
+      },
+      {
+        "command": "easymarkdoc.exportPdfAs",
+        "title": "Export PDF As…",
+        "category": "EasyMarkDoc"
+      },
+      {
+        "command": "easymarkdoc.openStyleEditor",
+        "title": "Open Style Editor in Browser",
+        "category": "EasyMarkDoc"
+      },
+      {
+        "command": "easymarkdoc.selectTheme",
+        "title": "Select Theme CSS…",
+        "category": "EasyMarkDoc"
+      },
+      {
+        "command": "easymarkdoc.createTheme",
+        "title": "Create Theme File (easymarkdoc.css)",
+        "category": "EasyMarkDoc"
+      },
+      {
+        "command": "easymarkdoc.restartServer",
+        "title": "Restart Server",
+        "category": "EasyMarkDoc"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "easymarkdoc.openPreview",
+          "when": "editorLangId == markdown",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "easymarkdoc.exportPdf",
+          "when": "editorLangId == markdown",
+          "group": "easymarkdoc"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "easymarkdoc.exportPdf",
+          "when": "resourceLangId == markdown",
+          "group": "easymarkdoc"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "easymarkdoc.openPreview",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "easymarkdoc.exportPdf",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "easymarkdoc.exportPdfAs",
+          "when": "editorLangId == markdown"
+        },
+        {
+          "command": "easymarkdoc.createTheme",
+          "when": "editorLangId == markdown"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "easymarkdoc.openPreview",
+        "key": "ctrl+alt+p",
+        "mac": "cmd+alt+p",
+        "when": "editorLangId == markdown"
+      },
+      {
+        "command": "easymarkdoc.exportPdf",
+        "key": "ctrl+alt+e",
+        "mac": "cmd+alt+e",
+        "when": "editorLangId == markdown"
+      }
+    ],
+    "configuration": {
+      "title": "EasyMarkDoc",
+      "properties": {
+        "easymarkdoc.executablePath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Path to the `EasyMarkDoc` executable. When empty, the workspace's `target/release` / `target/debug` build and your `PATH` are searched."
+        },
+        "easymarkdoc.themePath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "CSS theme to use (absolute, or relative to the workspace folder). When empty, `easymarkdoc.css` next to the Markdown file is used if it exists, otherwise the default theme."
+        },
+        "easymarkdoc.outputDirectory": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Folder for exported PDFs (absolute, or relative to the Markdown file). When empty, PDFs are saved next to the Markdown file."
+        },
+        "easymarkdoc.previewMode": {
+          "type": "string",
+          "enum": [
+            "pdf",
+            "paged"
+          ],
+          "enumDescriptions": [
+            "Exact PDF rendered by Chromium",
+            "Fast paginated HTML preview"
+          ],
+          "default": "pdf",
+          "description": "Default preview mode."
+        },
+        "easymarkdoc.openAfterExport": {
+          "type": "boolean",
+          "default": false,
+          "description": "Open the PDF in the system viewer after exporting."
+        },
+        "easymarkdoc.chromePath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to a Chrome/Chromium/Edge executable for PDF rendering (optional)."
+        },
+        "easymarkdoc.allowBrowserDownload": {
+          "type": "boolean",
+          "default": true,
+          "description": "Download chrome-headless-shell automatically if no Chromium-based browser is installed."
+        }
+      }
+    }
+  }
+}

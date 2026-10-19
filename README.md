@@ -1,128 +1,204 @@
 # EasyMarkDoc
 
-Convert Markdown documents to HTML or PDF with syntax highlighting.
+Turn Markdown into well-designed PDF documents, styled entirely with CSS.
 
-## Features
+EasyMarkDoc renders Markdown to HTML with its own parser, applies a CSS theme,
+and prints it to PDF with headless Chromium, so the PDF follows the CSS
+exactly, including page size, margins, headers/footers and page numbers.
 
-- Convert Markdown to HTML
-- Convert Markdown to A4-sized PDF documents **(pure Rust, no Chrome needed!)**
-- Syntax highlighting for code blocks using the Dracula theme
-- Support for headings, lists, bold, italic, and inline code
-- Command-line interface for easy usage
-- Embedded Roboto fonts for PDF generation
+There are three ways to use it:
+
+1. **Command line**: `EasyMarkDoc notes.md` writes `notes.pdf`.
+2. **Web editor**: `EasyMarkDoc serve` opens a two-panel editor with a live
+   PDF preview and a Word-style ribbon that edits the CSS theme for you.
+3. **VS Code extension**: a live PDF preview beside your editor, plus export.
 
 ## Installation
 
 ```bash
 cargo build --release
+# optional: put it on your PATH
+cargo install --path .
 ```
 
-## Usage
+### PDF engine
 
-### Generate PDF (default)
+PDFs are rendered by a Chromium-based browser in headless mode. EasyMarkDoc
+looks for one in this order:
+
+1. `--chrome <path>` (or the `easymarkdoc.chromePath` VS Code setting)
+2. the `EASYMARKDOC_CHROME` environment variable
+3. a copy of *chrome-headless-shell* previously downloaded by EasyMarkDoc
+4. an installed Google Chrome, Chromium, Microsoft Edge, Brave or Vivaldi
+5. otherwise it downloads *chrome-headless-shell* (about 100 MB, once) into
+   your cache directory (`~/Library/Caches/easymarkdoc` on macOS,
+   `~/.cache/easymarkdoc` on Linux, `%LOCALAPPDATA%\easymarkdoc` on Windows)
+
+Run `EasyMarkDoc setup` to see which browser will be used (or to download one
+ahead of time). Pass `--no-download` to never download.
+
+> Arc is Chromium-based but does not support headless mode, so it is not used.
+
+## Command line
 
 ```bash
-./target/release/EasyMarkDoc input.md output.pdf
+EasyMarkDoc notes.md                       # → notes.pdf next to notes.md
+EasyMarkDoc notes.md out/                  # → out/notes.pdf
+EasyMarkDoc notes.md report.pdf --css theme.css
+EasyMarkDoc notes.md --html                # standalone HTML instead of PDF
+EasyMarkDoc notes.md --watch --open        # rebuild on every save
+EasyMarkDoc theme > my-theme.css           # print the default theme
+EasyMarkDoc serve notes.md                 # open the web editor
+EasyMarkDoc setup                          # locate/download the PDF engine
 ```
 
-This generates a PDF directly from Markdown.
+If a file called `easymarkdoc.css` sits next to the Markdown file, it is used
+as the theme automatically (by the CLI, the web editor and VS Code).
 
-### Generate only HTML
+## Web editor
 
 ```bash
-./target/release/EasyMarkDoc --html-only input.md output.html
+EasyMarkDoc serve [file.md] [--port 4848] [--css theme.css] [--output-dir DIR]
 ```
 
-### Command-line Options
+This opens `http://127.0.0.1:4848/` in your browser. The editor has:
 
+- **The Document and Theme CSS tabs** on the left. The Markdown editor
+  continues lists automatically and has formatting shortcuts (Ctrl/Cmd + B, I,
+  K, Alt+1–3 for headings).
+- **The preview** on the right:
+  - *PDF*: the exact PDF from Chromium. This is the default.
+  - *Pages (fast)*: paginated HTML for instant feedback while typing.
+- **The ribbon**:
+  - *Home*: text formatting, paragraph styles, lists, and inserting tables,
+    code, page breaks, a table of contents and footnotes; document font,
+    size, colour and alignment
+  - *Design*: style sets (Default, Modern, Academic, Report, Technical,
+    Elegant, Minimal), colours, code colour scheme, heading numbering
+  - *Layout*: page size and orientation, margins (with presets), line and
+    paragraph spacing, first-line indent
+  - *Headings*: font, weight, colour, sizes, underline rules, alignment
+  - *Header & Footer*: left, centre and right text with `{page}`,
+    `{pages}`, `{title}` and `{date}` fields; hide on the first page
+  - *Tables & More*: table, quote, inline code and image styling
+- **File, Theme and Export menus**: upload or open Markdown from disk, save
+  it back, load or save themes, and save the PDF (or HTML) to any folder on
+  your computer, or download it.
+
+Every ribbon change is written into the theme CSS (visible in the Theme CSS
+tab), so you can save it as `easymarkdoc.css` and reuse it from the command
+line or VS Code.
+
+The server listens on localhost only, and every API call needs a random
+per-session token.
+
+## VS Code extension
+
+The extension lives in [`vscode-extension/`](vscode-extension). It runs
+`EasyMarkDoc serve` in the background and shows the preview page beside your
+editor, updating as you type (like Live Preview).
+
+Commands (Command Palette → *EasyMarkDoc*):
+
+| Command | Shortcut |
+|---|---|
+| Open PDF Preview to the Side (also the editor title bar button) | Ctrl/Cmd+Alt+P |
+| Export PDF (next to the file, or to `easymarkdoc.outputDirectory`) | Ctrl/Cmd+Alt+E |
+| Export PDF As… | |
+| Open Style Editor in Browser (opens the web editor's ribbon for this file) | |
+| Create Theme File (`easymarkdoc.css`) / Select Theme CSS… | |
+
+The preview reloads when the theme file changes, including unsaved edits to
+an open `easymarkdoc.css`.
+
+To install it:
+
+```bash
+cargo install --path .            # or set easymarkdoc.executablePath
+cd vscode-extension
+npx @vscode/vsce package          # creates easymarkdoc-0.2.0.vsix
+code --install-extension easymarkdoc-0.2.0.vsix
 ```
-Usage: EasyMarkDoc [OPTIONS] <MD_LOCATION> <OUTPUT_LOCATION>
 
-Arguments:
-  <MD_LOCATION>      Path to the input Markdown file
-  <OUTPUT_LOCATION>  Path to the output file (HTML or PDF)
+For development, open `vscode-extension/` in VS Code and press F5. When the
+workspace is this repository, the extension uses `target/release` or
+`target/debug` automatically.
 
-Options:
-      --html-only  Generate only HTML output (default is to generate PDF)
-  -h, --help       Print help
-  -V, --version    Print version
-```
+## Themes
 
-## PDF Generation
+A theme is a CSS file layered **on top of** the default theme
+([`src/styles.css`](src/styles.css)), so it only needs what it changes:
 
-PDF generation uses **pure Rust** with the `genpdf` library and embedded Roboto fonts. **No Chrome or external dependencies required!**
-
-The PDF output is formatted for A4 paper size (210 × 297 mm) with automatic:
-- **Text wrapping** within page margins
-- **Multi-page** document handling
-- **Pagination** when content exceeds one page
-
-### Benefits
-
-- **Lightweight**: No need to install Chrome/Chromium
-- **Fast**: Direct Markdown to PDF conversion
-- **Portable**: Works anywhere Rust compiles
-- **Embedded fonts**: Roboto fonts are included in the binary
-- **Smart layout**: Automatic text wrapping and page breaks
-
-## Supported Markdown Features
-
-- **Headings**: `# H1` through `###### H6`
-- **Bold**: `**bold text**`
-- **Italic**: `*italic text*`
-- **Inline code**: `` `code` ``
-- **Code blocks**: Triple backticks with optional language specification
-- **Unordered lists**: `- item` or `* item`
-- **Ordered lists**: `1. item`, `2. item`, etc.
-
-## Example
-
-Input (`example.md`):
-```markdown
-# My Document
-
-This is a **bold** statement with *italic* emphasis.
-
-## Code Example
-
-\`\`\`rust
-fn main() {
-    println!("Hello, world!");
+```css
+:root {
+    --font-body: "Palatino Linotype", Palatino, serif;
+    --page-size: Letter;
+    --page-margin-left: 25mm;
+    --footer-center: "Page {page} of {pages}";
+    --header-right: "{title}";
+    --code-theme: github;
+    --heading-numbering: h2;
 }
-\`\`\`
+
+/* any CSS you like */
+blockquote { font-style: italic; }
 ```
 
-Generate HTML only:
-```bash
-./target/release/EasyMarkDoc --html-only example.md example.html
-```
+The settings variables are listed and documented at the top of
+`src/styles.css`. EasyMarkDoc builds the `@page` rules (size, margins,
+headers and footers), heading numbering, and the syntax-highlighting colours
+from them. You can still write your own `@page` rules; they take precedence.
 
-Generate PDF:
-```bash
-./target/release/EasyMarkDoc example.md example.pdf
-```
+Code colour schemes: `dracula` (default), `github`, `solarized-light`,
+`solarized-dark`, `ocean-dark`, `ocean-light`, `eighties`, `mocha`.
 
-## Library Usage
+## Markdown support
 
-The core functionality is also available as a library:
+- CommonMark blocks: ATX and setext headings, paragraphs, nested ordered and
+  unordered lists (tight and loose), blockquotes, fenced and indented code,
+  thematic breaks, raw HTML, hard line breaks
+- Inline: emphasis, strong, code spans, links (inline, reference, autolinks,
+  bare URLs), images, backslash escapes, HTML entities, inline HTML
+- GitHub extensions: tables with alignment, task lists, ~~strikethrough~~,
+  footnotes, alerts (`> [!NOTE]`, `> [!TIP]`, `> [!WARNING]`, …)
+- Document extras:
+  - `[TOC]` inserts a table of contents
+  - `\pagebreak` (or `\newpage`, `<!-- pagebreak -->`) starts a new page
+  - `==highlight==`
+  - `{#id}` after a heading sets a custom anchor
+  - an image with a title becomes a captioned figure:
+    `![alt](img.png "Figure 1: Caption")`
+- Syntax highlighting for fenced code with a language tag (via syntect)
+
+Relative image paths resolve from the Markdown file's folder.
+
+## Library use
 
 ```rust
-use EasyMarkDoc;
+// HTML
+let html = easymarkdoc::build_html(markdown, &easymarkdoc::HtmlOptions::default());
 
-// Convert Markdown to HTML
-let html = EasyMarkDoc::document_builder(markdown_text);
-
-// Convert Markdown to PDF (pure Rust, no Chrome needed!)
-EasyMarkDoc::markdown_to_pdf(&markdown_text, "output.pdf")?;
+// PDF
+let engine = easymarkdoc::PdfEngine::launch(&Default::default()).await?;
+let pdf = easymarkdoc::render_pdf(&engine, markdown, Some(css), Some(base_dir)).await?;
+engine.close().await;
 ```
 
-## Technical Details
+## Project layout
 
-- **HTML Generation**: Uses a custom Markdown parser with syntax highlighting via `syntect`
-- **PDF Generation**: Uses `genpdf` for direct PDF creation from Markdown with automatic text wrapping and pagination
-- **Fonts**: Roboto Regular and Bold fonts embedded in the binary
-- **No external dependencies**: Everything needed is compiled into the binary
+```
+src/
+  main.rs        CLI (convert, serve, theme, setup)
+  markdown.rs    Markdown → HTML parser
+  highlight.rs   syntax highlighting / code themes
+  theme.rs       stylesheet assembly from CSS variables
+  document.rs    full HTML document builder
+  pdf.rs         Chromium discovery, download and PDF rendering
+  server.rs      web editor / preview HTTP server
+  styles.css     default theme
+web/             web editor (vanilla JS; vendored CodeMirror 5, pdf.js, paged.js)
+vscode-extension/
+```
 
-## License
-
-See LICENSE file for details.
+Third-party front-end libraries in `web/vendor/` keep their own licences
+(CodeMirror: MIT, pdf.js: Apache-2.0, paged.js: MIT).
