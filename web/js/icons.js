@@ -1,0 +1,41 @@
+// SF Symbols-style line icons used by the toolbar and inspector.
+
+const icon = (body, size = 20) =>
+  `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+
+export const ICONS = {
+  sidebar: icon('<rect x="3" y="4.5" width="18" height="15" rx="2.5"/><line x1="9.5" y1="4.5" x2="9.5" y2="19.5"/><line x1="5.3" y1="8" x2="7.4" y2="8"/><line x1="5.3" y1="10.5" x2="7.4" y2="10.5"/>'),
+  zoom: icon('<circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.3" y1="15.3" x2="20.5" y2="20.5"/><line x1="8" y1="10.5" x2="13" y2="10.5"/><line x1="10.5" y1="8" x2="10.5" y2="13"/>'),
+  insert: icon('<rect x="4" y="4" width="16" height="16" rx="3.5"/><line x1="12" y1="8.5" x2="12" y2="15.5"/><line x1="8.5" y1="12" x2="15.5" y2="12"/>'),
+  table: icon('<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><line x1="3.5" y1="9.5" x2="20.5" y2="9.5"/><line x1="3.5" y1="14.5" x2="20.5" y2="14.5"/><line x1="9.2" y1="4.5" x2="9.2" y2="19.5"/><line x1="14.8" y1="4.5" x2="14.8" y2="19.5"/>'),
+  media: icon('<rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="m21 15.5-4.5-4.5L8 19"/>'),
+  text: icon('<path d="M5 6.5V5h14v1.5"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="9.5" y1="19" x2="14.5" y2="19"/>'),
+  proof: icon('<path d="M6 3.5h8l4 4V20a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 6 20z"/><path d="M14 3.5V8h4"/><circle cx="11.5" cy="13.5" r="2.6"/><line x1="13.4" y1="15.4" x2="15.5" y2="17.5"/>'),
+  export: icon('<path d="M8 8.5 12 4.5l4 4"/><line x1="12" y1="4.5" x2="12" y2="15"/><path d="M8.5 11H6.5a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-6A1.5 1.5 0 0 0 17.5 11h-2"/>'),
+  format: icon('<path d="M14.5 4.5 19.5 9.5 11 18l-5 1 1-5z"/><line x1="12.5" y1="6.5" x2="17.5" y2="11.5"/>'),
+  document: icon('<path d="M6 3.5h8l4 4V20a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 6 20z"/><path d="M14 3.5V8h4"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>'),
+  chevron: icon('<path d="m7 10 5 5 5-5"/>', 12),
+  toSource: icon('<path d="M15 6l-6 6 6 6"/>', 16),
+  toPage: icon('<path d="M9 6l6 6-6 6"/>', 16),
+  bold: '<b style="font: 700 15px -apple-system, system-ui">B</b>',
+  italic: '<i style="font: italic 600 15px Georgia, serif">I</i>',
+  strike: '<s style="font: 500 15px -apple-system, system-ui">S</s>',
+  highlight: icon('<path d="m9 11-5.5 5.5V20h3.5l5.5-5.5"/><path d="m21 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L13 4"/>', 16),
+  code: icon('<path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>', 16),
+  clearStyle: icon('<path d="M5 6V4.5h11V6"/><line x1="10.5" y1="4.5" x2="8" y2="17"/><line x1="6" y1="17" x2="10.5" y2="17"/><line x1="14" y1="13" x2="20" y2="19"/><line x1="20" y1="13" x2="14" y2="19"/>', 16),
+  link: icon('<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>', 16),
+  alignLeft: icon('<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="10" x2="14" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="4" y1="18" x2="12" y2="18"/>', 16),
+  alignCenter: icon('<line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="10" x2="17" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/>', 16),
+  alignRight: icon('<line x1="4" y1="6" x2="20" y2="6"/><line x1="10" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="12" y1="18" x2="20" y2="18"/>', 16),
+  alignJustify: icon('<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="4" y1="18" x2="20" y2="18"/>', 16),
+  portrait: icon('<rect x="7" y="3.5" width="10" height="17" rx="1.5"/>', 18),
+  landscape: icon('<rect x="3.5" y="7" width="17" height="10" rx="1.5"/>', 18),
+  rotateLeft: icon('<path d="M4 9a8 8 0 1 1 1.5 8"/><path d="M4 4v5h5"/>', 16),
+  rotateRight: icon('<path d="M20 9a8 8 0 1 0-1.5 8"/><path d="M20 4v5h-5"/>', 16),
+  flipH: icon('<line x1="12" y1="3" x2="12" y2="21" stroke-dasharray="2 2"/><path d="M9 7 4 17h5z"/><path d="M15 7l5 10h-5z"/>', 16),
+  flipV: icon('<line x1="3" y1="12" x2="21" y2="12" stroke-dasharray="2 2"/><path d="M7 9 17 4v5z"/><path d="M7 15l10 5v-5z"/>', 16),
+  trash: icon('<path d="M4 7h16"/><path d="M9.5 7V4.5h5V7"/><path d="M6 7l1 13h10l1-13"/>', 16),
+  wrapInline: icon('<line x1="3" y1="12" x2="7" y2="12"/><rect x="8.5" y="8.5" width="7" height="7" rx="1"/><line x1="17" y1="12" x2="21" y2="12"/><line x1="3" y1="5" x2="21" y2="5"/><line x1="3" y1="19" x2="21" y2="19"/>', 18),
+  wrapBlock: icon('<line x1="3" y1="4" x2="21" y2="4"/><rect x="7" y="7.5" width="10" height="9" rx="1"/><line x1="3" y1="20" x2="21" y2="20"/>', 18),
+  wrapAround: icon('<rect x="3" y="6" width="9" height="9" rx="1"/><line x1="14.5" y1="6" x2="21" y2="6"/><line x1="14.5" y1="10.5" x2="21" y2="10.5"/><line x1="14.5" y1="15" x2="21" y2="15"/><line x1="3" y1="19.5" x2="21" y2="19.5"/>', 18),
+};

@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 
 use anyhow::Context;
-use axum::extract::{Path as AxumPath, Query, State};
+use axum::extract::{DefaultBodyLimit, Path as AxumPath, Query, State};
 use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
@@ -115,6 +115,8 @@ pub async fn serve(options: ServeOptions) -> anyhow::Result<()> {
         .route("/api/save", post(api_save))
         .route("/api/browse", get(api_browse))
         .route("/api/open", post(api_open))
+        .route("/api/upload", post(api_upload))
+        .layer(DefaultBodyLimit::max(64 * 1024 * 1024))
         .with_state(state.clone());
 
     let addr: SocketAddr = format!("{}:{}", options.host, options.port).parse()?;
@@ -308,19 +310,44 @@ async fn preview_page(State(state): State<Shared>) -> Response {
     page_with_token("preview.html", &state.token)
 }
 
-async fn asset(AxumPath(path): AxumPath<String>) -> Response {
-    match Assets::get(&path) {
-        Some(file) => {
-            let mime = mime_guess::from_path(&path).first_or_octet_stream();
-            let mime = if path.ends_with(".mjs") {
-                "text/javascript".to_string()
-            } else {
-                mime.to_string()
-            };
-            ([(header::CONTENT_TYPE, mime)], file.data.into_owned()).into_response()
-        }
-        None => StatusCode::NOT_FOUND.into_response(),
+/// Serve embedded web assets. Browsers must revalidate on every load
+/// (`no-cache` + ETag) so an updated EasyMarkDoc never runs stale scripts
+/// cached from a previous version.
+async fn asset(AxumPath(path): AxumPath<String>, headers: HeaderMap) -> Response {
+    let Some(file) = Assets::get(&path) else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let etag = format!(
+        "\"{}\"",
+        file.metadata
+            .sha256_hash()
+            .iter()
+            .take(16)
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>()
+    );
+    let matches = headers
+        .get(header::IF_NONE_MATCH)
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|v| v.split(',').any(|t| t.trim() == etag));
+    let cache = [
+        (header::CACHE_CONTROL, "no-cache".to_string()),
+        (header::ETAG, etag),
+    ];
+    if matches {
+        return (StatusCode::NOT_MODIFIED, cache).into_response();
     }
+    let mime = if path.ends_with(".mjs") {
+        "text/javascript".to_string()
+    } else {
+        mime_guess::from_path(&path).first_or_octet_stream().to_string()
+    };
+    (
+        cache,
+        [(header::CONTENT_TYPE, mime)],
+        file.data.into_owned(),
+    )
+        .into_response()
 }
 
 /// Serve local files (images, fonts) referenced by the document in the HTML
@@ -430,7 +457,8 @@ struct RenderRequest {
     css: Option<String>,
     #[serde(default)]
     base_dir: Option<String>,
-    /// "pdf" (default), "html" (plain document) or "paged" (paginated preview)
+    /// "pdf" (default), "html" (plain document), "paged" (paginated preview)
+    /// or "edit" (paginated and source-mapped for the page editor)
     #[serde(default)]
     format: Option<String>,
 }
@@ -453,14 +481,7 @@ window.PagedConfig = {
   }
 };
 </script>
-<script src="/assets/vendor/pagedjs/paged.polyfill.min.js"></script>
-<style>
-@media screen {
-  html, body { background: transparent !important; }
-  .pagedjs_pages { display: flex; flex-direction: column; align-items: center; padding: 16px 0; }
-  .pagedjs_page { box-shadow: 0 2px 12px rgba(0,0,0,.18); margin-bottom: 16px; }
-}
-</style>"#;
+<script src="/assets/vendor/pagedjs/paged.polyfill.min.js"></script>"#;
 
 async fn api_render(
     State(state): State<Shared>,
@@ -476,7 +497,7 @@ async fn api_render(
             let pdf = render_pdf_bytes(&state, &req.markdown, css, base_dir.as_deref()).await?;
             Ok(([(header::CONTENT_TYPE, "application/pdf")], pdf).into_response())
         }
-        format @ ("html" | "paged") => {
+        format @ ("html" | "paged" | "edit") => {
             let base_href = base_dir.as_ref().map(|dir| {
                 let mut path = dir.to_string_lossy().replace('\\', "/");
                 if !path.ends_with('/') {
@@ -491,7 +512,8 @@ async fn api_render(
             let options = HtmlOptions {
                 css,
                 base_href,
-                extra_head: (format == "paged").then(|| PAGED_HEAD.to_string()),
+                extra_head: (format != "html").then(|| PAGED_HEAD.to_string()),
+                source_map: format == "edit",
                 ..Default::default()
             };
             let html = document::build(&req.markdown, &options);
@@ -744,5 +766,86 @@ async fn api_open(
         path: path.display().to_string(),
         directory,
         content,
+    }))
+}
+
+#[derive(Deserialize)]
+struct UploadRequest {
+    /// Document folder; the image is stored in its `images/` subfolder.
+    directory: String,
+    filename: String,
+    /// Base64-encoded file contents.
+    data: String,
+}
+
+#[derive(Serialize)]
+struct UploadResponse {
+    /// Path relative to the document folder, for use in Markdown.
+    relative: String,
+    path: String,
+}
+
+const IMAGE_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "gif", "webp", "svg", "avif", "bmp"];
+
+/// Store an image next to the document so it can be referenced relatively.
+async fn api_upload(
+    State(state): State<Shared>,
+    headers: HeaderMap,
+    Json(req): Json<UploadRequest>,
+) -> Result<Json<UploadResponse>, ApiError> {
+    check_token(&state, &headers)?;
+    let dir = PathBuf::from(&req.directory);
+    if !dir.is_dir() {
+        return Err(bad_request(format!(
+            "'{}' is not a directory",
+            req.directory
+        )));
+    }
+    let original = Path::new(&req.filename);
+    let ext = original
+        .extension()
+        .map(|e| e.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default();
+    if !IMAGE_EXTENSIONS.contains(&ext.as_str()) {
+        return Err(bad_request("only image files can be added"));
+    }
+    let stem: String = original
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default()
+        .chars()
+        .map(|c| {
+            if c.is_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '-'
+            }
+        })
+        .collect();
+    let stem = if stem.trim_matches('-').is_empty() {
+        "image".to_string()
+    } else {
+        stem
+    };
+
+    use base64::Engine;
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(req.data.as_bytes())
+        .map_err(|e| bad_request(format!("invalid image data: {e}")))?;
+
+    let images = dir.join("images");
+    tokio::fs::create_dir_all(&images).await?;
+    let mut name = format!("{stem}.{ext}");
+    let mut n = 2;
+    while images.join(&name).exists() {
+        name = format!("{stem}-{n}.{ext}");
+        n += 1;
+    }
+    let path = images.join(&name);
+    tokio::fs::write(&path, bytes).await?;
+    register_base_dir(&state, &Some(req.directory.clone()));
+    Ok(Json(UploadResponse {
+        relative: format!("images/{name}"),
+        path: path.display().to_string(),
     }))
 }

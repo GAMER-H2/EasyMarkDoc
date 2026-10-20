@@ -59,8 +59,8 @@
     --heading-numbering: off; /* off | h1 | h2 (level numbering starts at) */
 
     /* Links and accents */
-    --accent-color: #0b5cad;
-    --link-color: #0b5cad;
+    --accent-color: #0b5cad; /* links (unless --link-color is set) and checkboxes */
+    --link-color: var(--accent-color);
     --link-decoration: underline;
     --show-link-urls: off; /* on | off: print URLs after external links */
 
@@ -86,7 +86,7 @@
     --table-stripe-background: #f9fafb;
 
     /* Images */
-    --image-align: center; /* left | center | right */
+    --caption-align: center; /* left | center | right */
     --image-max-width: 100%;
 }
 
@@ -173,6 +173,7 @@ li.task-list-item {
     list-style: none;
 }
 .task-list-item input {
+    accent-color: var(--accent-color);
     margin: 0 0.4em 0 -1.4em;
     vertical-align: middle;
 }
@@ -283,7 +284,12 @@ tr {
     break-inside: avoid;
 }
 
-/* Images and figures */
+/* Images
+ *
+ * Images with attributes - ![alt](src "caption"){width=40% align=left wrap}
+ * - are rendered as .emd-image components:
+ *   span.emd-image > span.emd-image-frame > img, plus span.emd-caption
+ */
 img {
     max-width: var(--image-max-width);
     height: auto;
@@ -294,20 +300,90 @@ p > img:only-child {
     margin-left: auto;
     margin-right: auto;
 }
-figure {
-    margin-left: 0;
-    margin-right: 0;
-    text-align: var(--image-align);
+p.image-block {
+    text-indent: 0;
+}
+.emd-image {
+    display: block;
+    max-width: 100%;
     break-inside: avoid;
+    text-indent: 0;
+    line-height: 1.3;
 }
-figure img {
+.emd-image.align-center { margin: 0.4em auto; }
+.emd-image.align-left { margin: 0.4em auto 0.4em 0; }
+.emd-image.align-right { margin: 0.4em 0 0.4em auto; }
+.emd-image.wrap.align-left {
+    float: left;
+    margin: 0.2em 1.2em 0.6em 0;
+}
+.emd-image.wrap.align-right {
+    float: right;
+    margin: 0.2em 0 0.6em 1.2em;
+}
+.emd-image.inline {
     display: inline-block;
+    vertical-align: middle;
+    margin: 0 0.2em;
 }
-figcaption {
+.emd-image:not([style*="width"]) {
+    width: fit-content;
+}
+.emd-image-frame {
+    display: block;
+    overflow: hidden;
+    line-height: 0;
+}
+.emd-image-frame img {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+}
+.emd-image-frame.masked img {
+    height: 100%;
+    object-fit: cover;
+}
+.emd-caption {
+    display: block;
     font-size: 0.9em;
     color: var(--muted-color);
-    margin-top: 0.4em;
+    text-align: var(--caption-align);
+    margin-top: 0.45em;
 }
+/* Clear floated images before headings so sections start cleanly */
+h1, h2, h3 {
+    clear: both;
+}
+
+/* Image shadows (shadow=soft|medium|hard|float)
+ * Built from stacked, unblurred translucent layers: blurred box-shadows are
+ * stored in PDFs as soft-masked images, which macOS Preview draws as grey
+ * boxes. These look like soft shadows but print as plain vector shapes. */
+.emd-image.shadow-soft .emd-image-frame { box-shadow: 0 2px 0 1.0px rgba(0, 0, 0, 0.035), 0 2px 0 2.0px rgba(0, 0, 0, 0.035), 0 2px 0 3.0px rgba(0, 0, 0, 0.035), 0 2px 0 4.0px rgba(0, 0, 0, 0.035), 0 2px 0 5.0px rgba(0, 0, 0, 0.035); }
+.emd-image.shadow-medium .emd-image-frame { box-shadow: 0 5px 0 1.5px rgba(0, 0, 0, 0.03), 0 5px 0 3.0px rgba(0, 0, 0, 0.03), 0 5px 0 4.5px rgba(0, 0, 0, 0.03), 0 5px 0 6.0px rgba(0, 0, 0, 0.03), 0 5px 0 7.5px rgba(0, 0, 0, 0.03), 0 5px 0 9.0px rgba(0, 0, 0, 0.03), 0 5px 0 10.5px rgba(0, 0, 0, 0.03), 0 5px 0 12.0px rgba(0, 0, 0, 0.03); }
+.emd-image.shadow-hard .emd-image-frame { box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35); }
+.emd-image.shadow-float .emd-image-frame { box-shadow: 0 12px 0 1.2px rgba(0, 0, 0, 0.03), 0 12px 0 2.5px rgba(0, 0, 0, 0.03), 0 12px 0 3.8px rgba(0, 0, 0, 0.03), 0 12px 0 5.0px rgba(0, 0, 0, 0.03), 0 12px 0 6.2px rgba(0, 0, 0, 0.03), 0 12px 0 7.5px rgba(0, 0, 0, 0.03), 0 12px 0 8.8px rgba(0, 0, 0, 0.03), 0 12px 0 10.0px rgba(0, 0, 0, 0.03); }
+
+/* Image style presets (add with .name in the attributes) */
+.emd-image.img-framed .emd-image-frame {
+    border: 6px solid #ffffff;
+    outline: 1px solid #d0d7de;
+}
+.emd-image.img-polaroid .emd-image-frame {
+    background: #ffffff;
+    padding: 6px 6px 28px;
+    box-shadow: 0 2px 0 1.0px rgba(0, 0, 0, 0.04), 0 2px 0 2.0px rgba(0, 0, 0, 0.04), 0 2px 0 3.0px rgba(0, 0, 0, 0.04), 0 2px 0 4.0px rgba(0, 0, 0, 0.04);
+}
+.emd-image.img-rounded .emd-image-frame { border-radius: 12px; }
+.emd-image.img-circle .emd-image-frame {
+    border-radius: 50%;
+    aspect-ratio: 1 / 1;
+}
+.emd-image.img-circle .emd-image-frame img {
+    height: 100%;
+    object-fit: cover;
+}
+.emd-image.img-outline .emd-image-frame { border: 1px solid #1f2328; }
 
 /* Rules and breaks */
 hr {
@@ -322,6 +398,9 @@ hr {
 /* Table of contents */
 .toc {
     font-family: var(--font-heading);
+}
+.toc p {
+    text-indent: 0;
 }
 .toc-title {
     font-weight: 700;

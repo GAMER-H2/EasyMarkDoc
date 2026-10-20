@@ -337,7 +337,7 @@ async function openStyleEditor() {
     }
     vscode.env.openExternal(vscode.Uri.parse(target));
     vscode.window.showInformationMessage(
-      `Style the document in your browser, then use Theme → Save theme to folder… and save it as ${THEME_FILE} next to the document. The preview updates automatically.`,
+      `Edit and style the document in your browser. Save the Markdown with ⌘S; save the theme with Document › Theme › Save… as ${THEME_FILE} next to the document. The preview updates automatically.`,
     );
   } catch (err) {
     vscode.window.showErrorMessage(err.message);

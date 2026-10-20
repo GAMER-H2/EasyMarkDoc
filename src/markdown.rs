@@ -34,10 +34,22 @@ pub struct Rendered {
 
 const TOC_PLACEHOLDER: &str = "\u{0}EASYMARKDOC_TOC\u{0}";
 
+/// Private-use characters the page editor inserts to mark the caret and
+/// the end of a selection.
+const CARET_MARKS: [char; 2] = ['\u{E000}', '\u{E002}'];
+
 /// Render Markdown text to an HTML fragment.
 pub fn render(markdown: &str) -> Rendered {
+    render_with(markdown, Options::default())
+}
+
+/// Render Markdown text to an HTML fragment with options.
+pub fn render_with(markdown: &str, options: Options) -> Rendered {
     let normalized = normalize(markdown);
-    let mut parser = Parser::default();
+    let mut parser = Parser {
+        source_map: options.source_map,
+        ..Parser::default()
+    };
     let lines = parser.collect_definitions(&normalized);
     let mut html = parser.blocks(&lines, false);
 
@@ -96,6 +108,63 @@ struct Parser {
     used_ids: HashMap<String, usize>,
     /// Set while rendering link text, to avoid nested autolinks.
     in_link: bool,
+    /// Annotate top-level blocks with their source line range.
+    source_map: bool,
+    /// Nesting depth of `blocks` calls (1 = top level).
+    depth: usize,
+    /// Images seen so far in the current top-level block.
+    image_counter: usize,
+    /// Set while rendering a paragraph that holds a single image.
+    sole_image: bool,
+}
+
+/// Rendering options.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Options {
+    /// Add `data-src="start-end"` (0-based source line range) to every
+    /// top-level block and `data-img` indexes to images. Used by the editor
+    /// to map between the page and the Markdown source.
+    pub source_map: bool,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum BlockKind {
+    Normal,
+    Toc,
+    Raw,
+}
+
+/// Insert source-map attributes into the first tag of a rendered block.
+fn annotate_block(html: &mut String, from: usize, start: usize, end: usize, kind: BlockKind) {
+    let attr = format!(" data-src=\"{start}-{end}\"");
+    match kind {
+        BlockKind::Raw => {
+            html.insert_str(
+                from,
+                &format!("<div class=\"emd-raw\" contenteditable=\"false\"{attr}>\n"),
+            );
+            html.push_str("</div>\n");
+        }
+        BlockKind::Toc => {
+            html.insert_str(
+                from,
+                &format!("<div class=\"emd-toc-block\" contenteditable=\"false\"{attr}>"),
+            );
+            let trimmed = html.trim_end_matches('\n').len();
+            html.truncate(trimmed);
+            html.push_str("</div>\n");
+        }
+        BlockKind::Normal => {
+            let Some(rel) = html[from..].find('<') else {
+                return;
+            };
+            let tag_start = from + rel + 1;
+            let name_len = html[tag_start..]
+                .find(|c: char| c.is_whitespace() || c == '>' || c == '/')
+                .unwrap_or(0);
+            html.insert_str(tag_start + name_len, &attr);
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -529,6 +598,8 @@ impl Parser {
                         i += 1;
                     }
                     self.footnote_defs.insert(normalize_label(label), body);
+                    // Keep line numbers stable for the source map.
+                    out.resize(i, String::new());
                     continue;
                 }
                 if let Some((label, url, title)) = parse_link_ref_def(t) {
@@ -536,6 +607,7 @@ impl Parser {
                         .entry(normalize_label(&label))
                         .or_insert((url, title));
                     i += 1;
+                    out.push(String::new());
                     continue;
                 }
             }
@@ -550,9 +622,17 @@ impl Parser {
     /// Render a sequence of lines as block-level HTML. When `tight` is set,
     /// paragraphs are emitted without `<p>` wrappers (tight list items).
     fn blocks(&mut self, lines: &[String], tight: bool) -> String {
+        self.depth += 1;
+        let html = self.blocks_inner(lines, tight);
+        self.depth -= 1;
+        html
+    }
+
+    fn blocks_inner(&mut self, lines: &[String], tight: bool) -> String {
         let mut html = String::new();
         let mut i = 0;
         let n = lines.len();
+        let top_level = self.depth == 1;
 
         while i < n {
             let line = &lines[i];
@@ -562,150 +642,169 @@ impl Parser {
                 continue;
             }
 
-            // Indented code block.
-            if indent_of(line) >= 4 {
-                let mut code = Vec::new();
-                while i < n && (is_blank(&lines[i]) || indent_of(&lines[i]) >= 4) {
-                    code.push(strip_indent(&lines[i], 4).to_string());
-                    i += 1;
-                }
-                while code.last().is_some_and(|l| l.trim().is_empty()) {
-                    code.pop();
-                }
-                let mut text = code.join("\n");
-                text.push('\n');
-                html.push_str(&highlight::code_block(&text, None));
-                continue;
+            let block_start = i;
+            let html_start = html.len();
+            let mut kind = BlockKind::Normal;
+            if top_level {
+                self.image_counter = 0;
             }
 
-            if let Some(fence) = fence_open(line) {
-                i += 1;
-                let mut code = String::new();
-                while i < n && !fence_closes(&lines[i], &fence) {
-                    code.push_str(strip_indent(&lines[i], fence.indent));
-                    code.push('\n');
-                    i += 1;
-                }
-                i += 1; // closing fence (or end of input)
-                let lang = code_language(&fence.info);
-                html.push_str(&highlight::code_block(&code, lang.as_deref()));
-                continue;
-            }
-
-            if is_page_break(line) {
-                html.push_str("<div class=\"page-break\"></div>\n");
-                i += 1;
-                continue;
-            }
-
-            if is_toc(line) {
-                html.push_str(TOC_PLACEHOLDER);
-                html.push('\n');
-                i += 1;
-                continue;
-            }
-
-            if let Some((level, content)) = atx_heading(line) {
-                html.push_str(&self.heading(level, content));
-                i += 1;
-                continue;
-            }
-
-            if is_thematic_break(line) {
-                html.push_str("<hr />\n");
-                i += 1;
-                continue;
-            }
-
-            if is_blockquote(line) {
-                let mut inner = Vec::new();
-                let mut last_was_paragraph = false;
-                while i < n {
-                    let l = &lines[i];
-                    if is_blockquote(l) {
-                        let t = l.trim_start();
-                        let t = &t[1..];
-                        let t = t.strip_prefix(' ').unwrap_or(t);
-                        last_was_paragraph = !is_blank(t) && fence_open(t).is_none();
-                        inner.push(t.to_string());
-                    } else if last_was_paragraph && !interrupts_paragraph(l) {
-                        // Lazy continuation line.
-                        inner.push(l.trim_start().to_string());
-                    } else {
-                        break;
-                    }
-                    i += 1;
-                }
-                html.push_str(&self.blockquote(&inner));
-                continue;
-            }
-
-            if list_marker(line).is_some() {
-                let (list_html, next) = self.list(lines, i);
-                html.push_str(&list_html);
-                i = next;
-                continue;
-            }
-
-            if i + 1 < n && line.contains('|') && is_table_delimiter(&lines[i + 1]) {
-                let header = split_table_row(line);
-                let aligns = split_table_row(&lines[i + 1]);
-                if header.len() == aligns.len() {
-                    i += 2;
-                    let mut rows = Vec::new();
-                    while i < n && !is_blank(&lines[i]) && !interrupts_paragraph(&lines[i]) {
-                        rows.push(split_table_row(&lines[i]));
+            'block: {
+                // Indented code block.
+                if indent_of(line) >= 4 {
+                    let mut code = Vec::new();
+                    while i < n && (is_blank(&lines[i]) || indent_of(&lines[i]) >= 4) {
+                        code.push(strip_indent(&lines[i], 4).to_string());
                         i += 1;
                     }
-                    html.push_str(&self.table(&header, &aligns, &rows));
-                    continue;
-                }
-            }
-
-            if is_html_block_start(line) {
-                let comment = line.trim_start().starts_with("<!--");
-                while i < n {
-                    let l = &lines[i];
-                    if !comment && is_blank(l) {
-                        break;
+                    while code.last().is_some_and(|l| l.trim().is_empty()) {
+                        code.pop();
                     }
-                    html.push_str(l);
+                    let mut text = code.join("\n");
+                    text.push('\n');
+                    html.push_str(&highlight::code_block(&text, None));
+                    break 'block;
+                }
+
+                if let Some(fence) = fence_open(line) {
+                    i += 1;
+                    let mut code = String::new();
+                    while i < n && !fence_closes(&lines[i], &fence) {
+                        code.push_str(strip_indent(&lines[i], fence.indent));
+                        code.push('\n');
+                        i += 1;
+                    }
+                    i = (i + 1).min(n); // closing fence (or end of input)
+                    let lang = code_language(&fence.info);
+                    html.push_str(&highlight::code_block(&code, lang.as_deref()));
+                    break 'block;
+                }
+
+                if is_page_break(line) {
+                    html.push_str("<div class=\"page-break\"></div>\n");
+                    i += 1;
+                    break 'block;
+                }
+
+                if is_toc(line) {
+                    kind = BlockKind::Toc;
+                    html.push_str(TOC_PLACEHOLDER);
                     html.push('\n');
                     i += 1;
-                    if comment && l.contains("-->") {
-                        break;
+                    break 'block;
+                }
+
+                if let Some((level, content)) = atx_heading(line) {
+                    html.push_str(&self.heading(level, content));
+                    i += 1;
+                    break 'block;
+                }
+
+                if is_thematic_break(line) {
+                    html.push_str("<hr />\n");
+                    i += 1;
+                    break 'block;
+                }
+
+                if is_blockquote(line) {
+                    let mut inner = Vec::new();
+                    let mut last_was_paragraph = false;
+                    while i < n {
+                        let l = &lines[i];
+                        if is_blockquote(l) {
+                            let t = l.trim_start();
+                            let t = &t[1..];
+                            let t = t.strip_prefix(' ').unwrap_or(t);
+                            last_was_paragraph = !is_blank(t) && fence_open(t).is_none();
+                            inner.push(t.to_string());
+                        } else if last_was_paragraph && !interrupts_paragraph(l) {
+                            // Lazy continuation line.
+                            inner.push(l.trim_start().to_string());
+                        } else {
+                            break;
+                        }
+                        i += 1;
+                    }
+                    html.push_str(&self.blockquote(&inner));
+                    break 'block;
+                }
+
+                if list_marker(line).is_some() {
+                    let (list_html, next) = self.list(lines, i);
+                    html.push_str(&list_html);
+                    i = next;
+                    break 'block;
+                }
+
+                if i + 1 < n && line.contains('|') && is_table_delimiter(&lines[i + 1]) {
+                    let header = split_table_row(line);
+                    let aligns = split_table_row(&lines[i + 1]);
+                    if header.len() == aligns.len() {
+                        i += 2;
+                        let mut rows = Vec::new();
+                        while i < n && !is_blank(&lines[i]) && !interrupts_paragraph(&lines[i]) {
+                            rows.push(split_table_row(&lines[i]));
+                            i += 1;
+                        }
+                        html.push_str(&self.table(&header, &aligns, &rows));
+                        break 'block;
                     }
                 }
-                continue;
-            }
 
-            // Paragraph, possibly turned into a setext heading.
-            let mut para = vec![line.trim_start().to_string()];
-            i += 1;
-            let mut setext = None;
-            while i < n {
-                let l = &lines[i];
-                if let Some(level) = setext_level(l) {
-                    setext = Some(level);
-                    i += 1;
-                    break;
+                if is_html_block_start(line) {
+                    kind = BlockKind::Raw;
+                    let comment = line.trim_start().starts_with("<!--");
+                    while i < n {
+                        let l = &lines[i];
+                        if !comment && is_blank(l) {
+                            break;
+                        }
+                        html.push_str(l);
+                        html.push('\n');
+                        i += 1;
+                        if comment && l.contains("-->") {
+                            break;
+                        }
+                    }
+                    break 'block;
                 }
-                if interrupts_paragraph(l) {
-                    break;
-                }
-                if l.contains('|') && i + 1 < n && is_table_delimiter(&lines[i + 1]) {
-                    break;
-                }
-                para.push(l.trim_start().to_string());
+
+                // Paragraph, possibly turned into a setext heading.
+                let mut para = vec![line.trim_start().to_string()];
                 i += 1;
-            }
-            let text = para.join("\n");
-            let text = text.trim_end();
+                let mut setext = None;
+                while i < n {
+                    let l = &lines[i];
+                    if let Some(level) = setext_level(l) {
+                        setext = Some(level);
+                        i += 1;
+                        break;
+                    }
+                    if interrupts_paragraph(l) {
+                        break;
+                    }
+                    if l.contains('|') && i + 1 < n && is_table_delimiter(&lines[i + 1]) {
+                        break;
+                    }
+                    para.push(l.trim_start().to_string());
+                    i += 1;
+                }
+                let text = para.join("\n");
+                let text = text.trim_end();
 
-            if let Some(level) = setext {
-                html.push_str(&self.heading(level, text));
-            } else {
-                html.push_str(&self.paragraph(text, tight));
+                if let Some(level) = setext {
+                    html.push_str(&self.heading(level, text));
+                } else {
+                    html.push_str(&self.paragraph(text, tight));
+                }
+            }
+
+            if top_level && self.source_map {
+                let mut last = i.saturating_sub(1).max(block_start);
+                while last > block_start && is_blank(&lines[last]) {
+                    last -= 1;
+                }
+                annotate_block(&mut html, html_start, block_start, last, kind);
             }
         }
 
@@ -713,41 +812,178 @@ impl Parser {
     }
 
     fn paragraph(&mut self, text: &str, tight: bool) -> String {
-        if let Some(figure) = self.figure(text) {
-            return figure;
+        let sole_image = self.is_sole_image(text);
+        if sole_image {
+            self.sole_image = true;
         }
         let inner = self.inline(text);
-        if tight {
+        self.sole_image = false;
+        if sole_image {
+            format!("<p class=\"image-block\">{inner}</p>\n")
+        } else if tight {
             format!("{inner}\n")
         } else {
             format!("<p>{inner}</p>\n")
         }
     }
 
-    /// A paragraph consisting of a single titled image becomes a figure with
-    /// the title as its caption.
-    fn figure(&mut self, text: &str) -> Option<String> {
+    /// Whether a paragraph consists of nothing but one image.
+    fn is_sole_image(&self, text: &str) -> bool {
         let chars: Vec<char> = text.chars().collect();
         if chars.first() != Some(&'!') || chars.get(1) != Some(&'[') {
-            return None;
+            return false;
         }
-        let (link, end) = self.parse_link(&chars, 1)?;
-        if end != chars.len() {
-            return None;
+        let Some((_, end)) = self.parse_link(&chars, 1) else {
+            return false;
+        };
+        let end = parse_image_attrs(&chars, end).map_or(end, |(_, e)| e);
+        chars[end..].iter().all(|c| c.is_whitespace())
+    }
+
+    /// Render an image. Images with attributes, or images standing alone in
+    /// a paragraph with a title, become a styled image component with an
+    /// optional caption.
+    fn image(&mut self, link: &Link, attrs: Option<ImageAttrs>) -> String {
+        let alt = plain_text(&self.inline(&link.text));
+        let index = self.image_counter;
+        self.image_counter += 1;
+        let data_img = if self.source_map {
+            format!(" data-img=\"{index}\"")
+        } else {
+            String::new()
+        };
+
+        let caption = link
+            .title
+            .as_ref()
+            .filter(|_| attrs.is_some() || self.sole_image);
+        if attrs.is_none() && caption.is_none() {
+            let mut html = format!(
+                "<img src=\"{}\" alt=\"{}\"{data_img}",
+                escape_attr(&link.url),
+                escape_attr(&alt)
+            );
+            if let Some(title) = &link.title {
+                html.push_str(&format!(" title=\"{}\"", escape_attr(title)));
+            }
+            html.push_str(" />");
+            return html;
         }
-        let caption = link.title.clone()?;
-        Some(format!(
-            "<figure>\n<img src=\"{}\" alt=\"{}\" />\n<figcaption>{}</figcaption>\n</figure>\n",
+
+        let attrs = attrs.unwrap_or_default();
+        let mut classes = vec!["emd-image".to_string()];
+        let layout = if attrs.inline {
+            "inline"
+        } else {
+            match attrs.align.as_deref() {
+                Some("left") => "align-left",
+                Some("right") => "align-right",
+                _ => "align-center",
+            }
+        };
+        classes.push(layout.to_string());
+        if attrs.wrap && !attrs.inline && attrs.align.as_deref().is_some_and(|a| a != "center") {
+            classes.push("wrap".into());
+        }
+        if let Some(shadow) = &attrs.shadow {
+            classes.push(format!("shadow-{shadow}"));
+        }
+        if caption.is_some() {
+            classes.push("has-caption".into());
+        }
+        classes.extend(attrs.classes.iter().cloned());
+
+        let mut outer_style = String::new();
+        if let Some(width) = &attrs.width {
+            outer_style.push_str(&format!("width: {width};"));
+        }
+
+        let mut frame_style = String::new();
+        if let Some(aspect) = &attrs.aspect {
+            frame_style.push_str(&format!("aspect-ratio: {aspect};"));
+        }
+        if let Some(rotate) = attrs.rotate {
+            frame_style.push_str(&format!("transform: rotate({rotate}deg);"));
+        }
+        if let Some(border) = attrs.border {
+            frame_style.push_str(&format!(
+                "border: {border}px {} {};",
+                attrs.border_style.as_deref().unwrap_or("solid"),
+                attrs.border_color.as_deref().unwrap_or("#1f2328")
+            ));
+        }
+        if let Some(radius) = &attrs.radius {
+            frame_style.push_str(&format!("border-radius: {radius};"));
+        }
+
+        let mut img_style = String::new();
+        let (fx, fy) = attrs.focus.unwrap_or((50.0, 50.0));
+        if attrs.aspect.is_some() || attrs.zoom.is_some() || attrs.focus.is_some() {
+            img_style.push_str(&format!("object-position: {fx}% {fy}%;"));
+        }
+        let mut transforms = Vec::new();
+        if let Some(zoom) = attrs.zoom {
+            transforms.push(format!("scale({zoom})"));
+        }
+        match attrs.flip.as_deref() {
+            Some("h") => transforms.push("scaleX(-1)".into()),
+            Some("v") => transforms.push("scaleY(-1)".into()),
+            Some("hv") | Some("vh") => transforms.push("scale(-1, -1)".into()),
+            _ => {}
+        }
+        if !transforms.is_empty() {
+            img_style.push_str(&format!(
+                "transform: {}; transform-origin: {fx}% {fy}%;",
+                transforms.join(" ")
+            ));
+        }
+        if let Some(opacity) = attrs.opacity {
+            img_style.push_str(&format!("opacity: {opacity};"));
+        }
+
+        let mut html = format!("<span class=\"{}\"", classes.join(" "));
+        if let Some(id) = &attrs.id {
+            html.push_str(&format!(" id=\"{}\"", escape_attr(id)));
+        }
+        if !outer_style.is_empty() {
+            html.push_str(&format!(" style=\"{outer_style}\""));
+        }
+        html.push_str(&data_img);
+        if self.source_map {
+            html.push_str(&format!(" data-md-attrs=\"{}\"", escape_attr(&attrs.raw)));
+        }
+        html.push_str("><span class=\"emd-image-frame");
+        if attrs.aspect.is_some() {
+            html.push_str(" masked");
+        }
+        html.push('"');
+        if !frame_style.is_empty() {
+            html.push_str(&format!(" style=\"{frame_style}\""));
+        }
+        html.push_str(&format!(
+            "><img src=\"{}\" alt=\"{}\"",
             escape_attr(&link.url),
-            escape_attr(&plain_text(&self.inline(&link.text))),
-            self.inline(&caption)
-        ))
+            escape_attr(&alt)
+        ));
+        if !img_style.is_empty() {
+            html.push_str(&format!(" style=\"{img_style}\""));
+        }
+        html.push_str(" /></span>");
+        if let Some(caption) = caption {
+            html.push_str(&format!(
+                "<span class=\"emd-caption\">{}</span>",
+                self.inline(caption)
+            ));
+        }
+        html.push_str("</span>");
+        html
     }
 
     fn heading(&mut self, level: usize, content: &str) -> String {
         let (content, custom_id) = split_heading_id(content);
         let inner = self.inline(content);
-        let text = plain_text(&inner);
+        // The editor's caret marker must not leak into ids, the TOC or title.
+        let text = plain_text(&inner).replace(CARET_MARKS, "");
         let base = custom_id
             .map(str::to_string)
             .unwrap_or_else(|| slugify(&text));
@@ -761,7 +997,16 @@ impl Parser {
             id: id.clone(),
             text,
         });
-        format!("<h{level} id=\"{}\">{inner}</h{level}>\n", escape_attr(&id))
+        let custom = match custom_id {
+            Some(custom) if self.source_map => {
+                format!(" data-custom-id=\"{}\"", escape_attr(custom))
+            }
+            _ => String::new(),
+        };
+        format!(
+            "<h{level} id=\"{}\"{custom}>{inner}</h{level}>\n",
+            escape_attr(&id)
+        )
     }
 
     fn unique_id(&mut self, base: String) -> String {
@@ -960,6 +1205,14 @@ impl Parser {
     }
 
     fn render_footnotes(&mut self) -> String {
+        // Footnote bodies are not top-level blocks of the source.
+        self.depth += 1;
+        let html = self.render_footnotes_inner();
+        self.depth -= 1;
+        html
+    }
+
+    fn render_footnotes_inner(&mut self) -> String {
         let mut html = String::from("<section class=\"footnotes\">\n<hr />\n<ol>\n");
         let order = self.footnote_order.clone();
         for (idx, label) in order.iter().enumerate() {
@@ -1145,6 +1398,196 @@ struct Link {
     text: String,
     url: String,
     title: Option<String>,
+    /// For reference-style links: the label and the form used
+    /// (`full` = `[text][label]`, `collapsed` = `[text][]`, `shortcut` = `[text]`).
+    reference: Option<(String, &'static str)>,
+}
+
+/// Image attributes: `![alt](src "caption"){width=40% align=left wrap}`.
+///
+/// Recognised keys (all optional):
+/// - `width=45%` (or px/mm/cm/in/em)
+/// - `align=left|center|right`, `wrap` (text flows around left/right images),
+///   `inline` (image sits in the line of text)
+/// - `aspect=4:3`, `zoom=1.5`, `focus=30,60`: crop mask (ratio, scale and
+///   the focal point in percent)
+/// - `rotate=15` (degrees), `flip=h|v|hv`
+/// - `border=2`, `border-color=#333`, `border-style=solid|dashed|dotted|double`,
+///   `radius=8` (px) or `radius=50%`, `shadow=soft|medium|hard|float`,
+///   `opacity=0.8`
+/// - `.class` and `#id`
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct ImageAttrs {
+    pub raw: String,
+    pub width: Option<String>,
+    pub align: Option<String>,
+    pub wrap: bool,
+    pub inline: bool,
+    pub aspect: Option<String>,
+    pub zoom: Option<f64>,
+    pub focus: Option<(f64, f64)>,
+    pub rotate: Option<f64>,
+    pub flip: Option<String>,
+    pub border: Option<f64>,
+    pub border_color: Option<String>,
+    pub border_style: Option<String>,
+    pub radius: Option<String>,
+    pub shadow: Option<String>,
+    pub opacity: Option<f64>,
+    pub classes: Vec<String>,
+    pub id: Option<String>,
+}
+
+fn is_ident(s: &str) -> bool {
+    !s.is_empty()
+        && s.chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+}
+
+fn parse_number(s: &str) -> Option<f64> {
+    let n: f64 = s.trim().parse().ok()?;
+    n.is_finite().then_some(n)
+}
+
+/// Parse an attribute block starting at `start` (which must be `{`).
+/// Returns the attributes and the index just past the closing brace.
+pub(crate) fn parse_image_attrs(chars: &[char], start: usize) -> Option<(ImageAttrs, usize)> {
+    if chars.get(start) != Some(&'{') {
+        return None;
+    }
+    let mut j = start + 1;
+    let mut quote = None;
+    while j < chars.len() {
+        let c = chars[j];
+        match quote {
+            Some(q) if c == q => quote = None,
+            Some(_) => {}
+            None if c == '"' => quote = Some(c),
+            None if c == '}' => break,
+            None if c == '\n' || c == '{' => return None,
+            None => {}
+        }
+        j += 1;
+    }
+    if j >= chars.len() {
+        return None;
+    }
+    let raw: String = chars[start + 1..j].iter().collect();
+    let attrs = parse_attr_string(&raw);
+    Some((attrs, j + 1))
+}
+
+fn attr_tokens(raw: &str) -> Vec<String> {
+    let mut tokens = Vec::new();
+    let mut current = String::new();
+    let mut in_quote = false;
+    for c in raw.chars() {
+        match c {
+            '"' => in_quote = !in_quote,
+            c if c.is_whitespace() && !in_quote => {
+                if !current.is_empty() {
+                    tokens.push(std::mem::take(&mut current));
+                }
+            }
+            c => current.push(c),
+        }
+    }
+    if !current.is_empty() {
+        tokens.push(current);
+    }
+    tokens
+}
+
+fn parse_attr_string(raw: &str) -> ImageAttrs {
+    let mut a = ImageAttrs {
+        raw: raw.trim().to_string(),
+        ..Default::default()
+    };
+    for token in attr_tokens(raw) {
+        if let Some(class) = token.strip_prefix('.') {
+            if is_ident(class) {
+                a.classes.push(class.to_string());
+            }
+            continue;
+        }
+        if let Some(id) = token.strip_prefix('#') {
+            if is_ident(id) {
+                a.id = Some(id.to_string());
+            }
+            continue;
+        }
+        let (key, value) = match token.split_once('=') {
+            Some((k, v)) => (k.trim().to_ascii_lowercase(), v.trim().to_string()),
+            None => (token.trim().to_ascii_lowercase(), String::new()),
+        };
+        match key.as_str() {
+            "width" => {
+                let unit_ok = ["%", "px", "mm", "cm", "in", "em"]
+                    .iter()
+                    .find_map(|u| value.strip_suffix(u))
+                    .and_then(parse_number)
+                    .is_some_and(|n| n > 0.0);
+                if unit_ok {
+                    a.width = Some(value);
+                } else if let Some(n) = parse_number(&value).filter(|n| *n > 0.0) {
+                    a.width = Some(format!("{n}px"));
+                }
+            }
+            "align" if matches!(value.as_str(), "left" | "center" | "right") => {
+                a.align = Some(value)
+            }
+            "wrap" => a.wrap = value.is_empty() || value == "true" || value == "around",
+            "inline" => a.inline = value.is_empty() || value == "true",
+            "aspect" => {
+                let parts: Vec<&str> = value.split([':', '/']).collect();
+                if let [w, h] = parts.as_slice()
+                    && let (Some(w), Some(h)) = (parse_number(w), parse_number(h))
+                    && w > 0.0
+                    && h > 0.0
+                {
+                    a.aspect = Some(format!("{w} / {h}"));
+                }
+            }
+            "zoom" => a.zoom = parse_number(&value).filter(|z| *z >= 1.0 && *z <= 10.0),
+            "focus" => {
+                if let Some((x, y)) = value.split_once(',')
+                    && let (Some(x), Some(y)) = (parse_number(x), parse_number(y))
+                {
+                    a.focus = Some((x.clamp(0.0, 100.0), y.clamp(0.0, 100.0)));
+                }
+            }
+            "rotate" => a.rotate = parse_number(&value).map(|r| r % 360.0),
+            "flip" if matches!(value.as_str(), "h" | "v" | "hv" | "vh") => a.flip = Some(value),
+            "border" => a.border = parse_number(&value).filter(|b| *b >= 0.0 && *b <= 50.0),
+            "border-color" => {
+                let ok = (value.starts_with('#')
+                    && value.len() <= 9
+                    && value[1..].chars().all(|c| c.is_ascii_hexdigit()))
+                    || value.chars().all(|c| c.is_ascii_alphabetic());
+                if ok && !value.is_empty() {
+                    a.border_color = Some(value);
+                }
+            }
+            "border-style"
+                if matches!(value.as_str(), "solid" | "dashed" | "dotted" | "double") =>
+            {
+                a.border_style = Some(value)
+            }
+            "radius" => {
+                if let Some(pct) = value.strip_suffix('%').and_then(parse_number) {
+                    a.radius = Some(format!("{}%", pct.clamp(0.0, 50.0)));
+                } else if let Some(px) = parse_number(value.trim_end_matches("px")) {
+                    a.radius = Some(format!("{}px", px.max(0.0)));
+                }
+            }
+            "shadow" if matches!(value.as_str(), "soft" | "medium" | "hard" | "float") => {
+                a.shadow = Some(value)
+            }
+            "opacity" => a.opacity = parse_number(&value).map(|o| o.clamp(0.0, 1.0)),
+            _ => {}
+        }
+    }
+    a
 }
 
 fn is_ascii_punct(c: char) -> bool {
@@ -1237,16 +1680,11 @@ impl Parser {
                 }
                 '!' if chars.get(i + 1) == Some(&'[') => {
                     if let Some((link, end)) = self.parse_link(chars, i + 1) {
-                        let alt = plain_text(&self.inline(&link.text));
-                        out.push_str(&format!(
-                            "<img src=\"{}\" alt=\"{}\"",
-                            escape_attr(&link.url),
-                            escape_attr(&alt)
-                        ));
-                        if let Some(title) = &link.title {
-                            out.push_str(&format!(" title=\"{}\"", escape_attr(title)));
-                        }
-                        out.push_str(" />");
+                        let (attrs, end) = match parse_image_attrs(chars, end) {
+                            Some((attrs, after)) => (Some(attrs), after),
+                            None => (None, end),
+                        };
+                        out.push_str(&self.image(&link, attrs));
                         i = end;
                     } else {
                         out.push('!');
@@ -1261,6 +1699,16 @@ impl Parser {
                         out.push_str(&format!("<a href=\"{}\"", escape_attr(&link.url)));
                         if let Some(title) = &link.title {
                             out.push_str(&format!(" title=\"{}\"", escape_attr(title)));
+                        }
+                        // Let the page editor write reference links back as
+                        // references instead of inlining their URL.
+                        if self.source_map
+                            && let Some((label, form)) = &link.reference
+                        {
+                            out.push_str(&format!(
+                                " data-md-ref=\"{}\" data-md-ref-form=\"{form}\"",
+                                escape_attr(label)
+                            ));
                         }
                         out.push('>');
                         let was_in_link = std::mem::replace(&mut self.in_link, true);
@@ -1390,7 +1838,8 @@ impl Parser {
         };
         Some((
             format!(
-                "<sup class=\"footnote-ref\"><a href=\"#fn-{number}\" id=\"fnref-{number}\">{number}</a></sup>"
+                "<sup class=\"footnote-ref\" data-label=\"{}\" contenteditable=\"false\"><a href=\"#fn-{number}\" id=\"fnref-{number}\">{number}</a></sup>",
+                escape_attr(&label)
             ),
             close + 1,
         ))
@@ -1462,7 +1911,15 @@ impl Parser {
             if chars.get(j) != Some(&')') {
                 return None;
             }
-            return Some((Link { text, url, title }, j + 1));
+            return Some((
+                Link {
+                    text,
+                    url,
+                    title,
+                    reference: None,
+                },
+                j + 1,
+            ));
         }
 
         // Reference-style links.
@@ -1471,17 +1928,24 @@ impl Parser {
         {
             let ref_close = ref_close + j + 1;
             let label: String = chars[j + 1..ref_close].iter().collect();
-            let key = if label.trim().is_empty() {
+            let collapsed = label.trim().is_empty();
+            let key = if collapsed {
                 normalize_label(&text)
             } else {
                 normalize_label(&label)
             };
             if let Some((url, title)) = self.link_refs.get(&key) {
+                let reference = if collapsed {
+                    (text.clone(), "collapsed")
+                } else {
+                    (label, "full")
+                };
                 return Some((
                     Link {
                         text,
                         url: url.clone(),
                         title: title.clone(),
+                        reference: Some(reference),
                     },
                     ref_close + 1,
                 ));
@@ -1491,6 +1955,7 @@ impl Parser {
         let (url, title) = self.link_refs.get(&normalize_label(&text))?;
         Some((
             Link {
+                reference: Some((text.clone(), "shortcut")),
                 text,
                 url: url.clone(),
                 title: title.clone(),
@@ -1866,10 +2331,58 @@ mod tests {
     }
 
     #[test]
-    fn figure_from_titled_image() {
+    fn captioned_image_component() {
         let out = html("![A cat](cat.png \"Figure 1: A cat\")");
-        assert!(out.contains("<figure>"));
-        assert!(out.contains("<figcaption>Figure 1: A cat</figcaption>"));
+        assert!(out.contains(
+            "<p class=\"image-block\"><span class=\"emd-image align-center has-caption\">"
+        ));
+        assert!(out.contains("<span class=\"emd-caption\">Figure 1: A cat</span>"));
+    }
+
+    #[test]
+    fn image_attributes() {
+        let out = html(
+            "Text ![d](a.png){width=40% align=left wrap shadow=soft aspect=4:3 zoom=1.5 focus=20,80 rotate=5 border=2 border-color=#ff0000 radius=50% .round #pic} more",
+        );
+        assert!(out.contains("class=\"emd-image align-left wrap shadow-soft round\""));
+        assert!(out.contains("id=\"pic\""));
+        assert!(out.contains("style=\"width: 40%;\""));
+        assert!(out.contains("aspect-ratio: 4 / 3;transform: rotate(5deg);border: 2px solid #ff0000;border-radius: 50%;"));
+        assert!(out.contains(
+            "object-position: 20% 80%;transform: scale(1.5); transform-origin: 20% 80%;"
+        ));
+        // Hostile values are dropped rather than injected into CSS.
+        let bad = html("![x](a.png){width=1px;background:red border-color=red;x}");
+        assert!(!bad.contains("background"));
+        assert!(!bad.contains("red;x"));
+    }
+
+    #[test]
+    fn source_map_annotates_top_level_blocks() {
+        let md = "# Title\n\nPara one\nstill one\n\n- a\n- b\n\n[r]: https://x\n\n```\ncode\n```\n<div>raw</div>\n\n![i](x.png) ![j](y.png)";
+        let out = super::render_with(md, super::Options { source_map: true }).html;
+        assert!(out.contains("<h1 data-src=\"0-0\" id=\"title\">"));
+        assert!(out.contains("<p data-src=\"2-3\">"));
+        assert!(out.contains("<ul data-src=\"5-6\">"));
+        assert!(out.contains("<pre data-src=\"10-12\""));
+        assert!(
+            out.contains("<div class=\"emd-raw\" contenteditable=\"false\" data-src=\"13-13\">")
+        );
+        assert!(out.contains("data-img=\"0\""));
+        assert!(out.contains("data-img=\"1\""));
+        // Nested blocks are not annotated, and normal output has no maps.
+        assert_eq!(out.matches("data-src").count(), 6);
+        assert!(!html(md).contains("data-src"));
+    }
+
+    #[test]
+    fn source_map_marks_reference_links() {
+        let md = "[a][r], [R][] and [r].\n\n[r]: https://x";
+        let out = super::render_with(md, super::Options { source_map: true }).html;
+        assert!(out.contains("data-md-ref=\"r\" data-md-ref-form=\"full\""));
+        assert!(out.contains("data-md-ref=\"R\" data-md-ref-form=\"collapsed\""));
+        assert!(out.contains("data-md-ref=\"r\" data-md-ref-form=\"shortcut\""));
+        assert!(!html(md).contains("data-md-ref"));
     }
 
     #[test]
@@ -1908,7 +2421,7 @@ mod tests {
         assert!(out.contains("href=\"#one\""));
         assert!(
             out.contains(
-                "<sup class=\"footnote-ref\"><a href=\"#fn-1\" id=\"fnref-1\">1</a></sup>"
+                "data-label=\"n\" contenteditable=\"false\"><a href=\"#fn-1\" id=\"fnref-1\">1</a></sup>"
             )
         );
         assert!(out.contains("<li id=\"fn-1\">"));

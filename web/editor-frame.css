@@ -1,0 +1,181 @@
+/* Styles for the editable page view (injected into the page iframe only;
+   never part of exported documents). */
+
+html.emd-editing {
+  background: transparent !important;
+}
+html.emd-editing body {
+  background: transparent !important;
+}
+.emd-editing .pagedjs_pages {
+  display: flex !important;
+  flex-direction: column;
+  /* "safe" keeps pages wider than the view scrollable instead of clipped */
+  align-items: safe center;
+  width: max-content;
+  min-width: 100%;
+  padding: 28px 24px 80px !important;
+  box-sizing: border-box;
+}
+.emd-editing .pagedjs_page {
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.12), 0 2px 10px rgba(0, 0, 0, 0.12) !important;
+  margin-bottom: 28px !important;
+}
+
+/* paged.js justifies the last line of anything split across pages, which
+   (because the whole article is split) stretches every line in the view. */
+.emd-editing [data-split-to] {
+  text-align-last: auto !important;
+}
+
+.emd-editing [contenteditable="true"] {
+  outline: none;
+  caret-color: #0a84ff;
+}
+.emd-editing ::selection {
+  background: rgba(10, 132, 255, 0.28);
+}
+.emd-editing [contenteditable="true"]:empty::before {
+  content: "\200b";
+}
+
+/* Locked blocks (raw HTML, table of contents) show a subtle hint on hover */
+.emd-editing [data-src][contenteditable="false"]:hover {
+  outline: 1px dashed rgba(10, 132, 255, 0.45);
+  outline-offset: 3px;
+  cursor: default;
+}
+.emd-editing .page-break {
+  position: relative;
+}
+
+/* Flash a block when jumping to it from the source */
+@keyframes emd-flash {
+  from { background-color: rgba(255, 214, 10, 0.55); }
+  to { background-color: transparent; }
+}
+.emd-flash {
+  animation: emd-flash 1.2s ease-out;
+  border-radius: 3px;
+}
+
+/* Images */
+.emd-editing [data-img] {
+  cursor: default;
+}
+.emd-editing .emd-caption[contenteditable="true"] {
+  outline: none;
+  cursor: text;
+  min-width: 2em;
+}
+.emd-editing .emd-caption[contenteditable="true"]:empty::before {
+  content: "Caption";
+  color: #aeaeb2;
+}
+
+.emd-image-selection {
+  position: absolute;
+  z-index: 1000;
+  border: 1px solid #0a84ff;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+.emd-image-selection .emd-handle {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  margin: -5px 0 0 -5px;
+  background: #fff;
+  border: 1px solid #0a84ff;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  pointer-events: auto;
+}
+.emd-handle[data-dir="nw"] { left: 0; top: 0; cursor: nwse-resize; }
+.emd-handle[data-dir="n"] { left: 50%; top: 0; cursor: ns-resize; }
+.emd-handle[data-dir="ne"] { left: 100%; top: 0; cursor: nesw-resize; }
+.emd-handle[data-dir="e"] { left: 100%; top: 50%; cursor: ew-resize; }
+.emd-handle[data-dir="se"] { left: 100%; top: 100%; cursor: nwse-resize; }
+.emd-handle[data-dir="s"] { left: 50%; top: 100%; cursor: ns-resize; }
+.emd-handle[data-dir="sw"] { left: 0; top: 100%; cursor: nesw-resize; }
+.emd-handle[data-dir="w"] { left: 0; top: 50%; cursor: ew-resize; }
+
+.emd-size-label {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 10px);
+  transform: translateX(-50%);
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(30, 30, 30, 0.82);
+  color: #fff;
+  font: 500 11px/1.4 -apple-system, system-ui, sans-serif;
+  white-space: nowrap;
+}
+
+/* Crop mask editing */
+.emd-image-selection.masking {
+  pointer-events: auto;
+  cursor: move;
+  border: 2px solid #0a84ff;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.18);
+}
+.emd-mask-done {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  padding: 3px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: #0a84ff;
+  color: #fff;
+  font: 600 12px/1.4 -apple-system, system-ui, sans-serif;
+  cursor: pointer;
+}
+.emd-mask-hint {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: rgba(30, 30, 30, 0.82);
+  color: #fff;
+  font: 500 11px/1.4 -apple-system, system-ui, sans-serif;
+  white-space: nowrap;
+}
+
+.emd-drag-ghost {
+  position: fixed;
+  z-index: 1001;
+  opacity: 0.7;
+  pointer-events: none;
+  border-radius: 4px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+.emd-drop-caret {
+  position: absolute;
+  z-index: 1001;
+  width: 2px;
+  background: #0a84ff;
+  border-radius: 1px;
+  pointer-events: none;
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.25);
+}
+
+/* While dragging an image, its handles or a crop mask */
+.emd-pointer-drag,
+.emd-pointer-drag * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+.emd-editing img {
+  -webkit-user-drag: none;
+}
+
+/* Links are edited like text; ⌘/Ctrl-click follows them */
+.emd-editing [contenteditable="true"] a[href] {
+  cursor: text;
+}
+.emd-editing [contenteditable="false"] a[href] {
+  cursor: pointer;
+}

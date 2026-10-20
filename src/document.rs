@@ -16,11 +16,18 @@ pub struct HtmlOptions {
     pub standalone: bool,
     /// Extra markup injected at the end of `<head>`.
     pub extra_head: Option<String>,
+    /// Annotate blocks with source line ranges (used by the editor).
+    pub source_map: bool,
 }
 
 /// Render Markdown into a complete HTML document.
 pub fn build(markdown_text: &str, options: &HtmlOptions) -> String {
-    let rendered = markdown::render(markdown_text);
+    let rendered = markdown::render_with(
+        markdown_text,
+        markdown::Options {
+            source_map: options.source_map,
+        },
+    );
     let title = options
         .title
         .clone()

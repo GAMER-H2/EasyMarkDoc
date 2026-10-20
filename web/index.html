@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="emd-token" content="__EMD_TOKEN__" />
   <title>EasyMarkDoc</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231d4ed8'/><text x='16' y='22' font-size='15' font-family='Arial' font-weight='700' fill='white' text-anchor='middle'>M↓</text></svg>" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23ff9f0a'/><path d='M9 7h10l5 5v13H9z' fill='white'/><path d='M19 7v5h5' fill='%23ffd60a'/></svg>" />
   <link rel="stylesheet" href="/assets/vendor/codemirror/codemirror.css" />
   <link rel="stylesheet" href="/assets/styles.css" />
   <script src="/assets/vendor/codemirror/codemirror.js"></script>
@@ -17,116 +17,201 @@
   <script src="/assets/vendor/codemirror/continuelist.js"></script>
   <script src="/assets/vendor/codemirror/placeholder.js"></script>
   <script src="/assets/vendor/codemirror/searchcursor.js"></script>
-  <script type="module" src="/assets/js/app.js"></script>
+  <script>
+    // Show a clear message instead of a dead page if the editor can't start
+    // (most often a content blocker blocking one of its script files).
+    window.emdBootError = function (detail) {
+      if (window.emdBooted || document.getElementById("boot-error")) return;
+      var box = document.createElement("div");
+      box.id = "boot-error";
+      box.setAttribute("role", "alert");
+      box.innerHTML =
+        "<strong>EasyMarkDoc couldn't start.</strong><p></p>" +
+        "<p>If you use a content blocker such as uBlock Origin, allow this page " +
+        "(127.0.0.1 / localhost) in it and reload. Otherwise, check the browser " +
+        "console for details.</p>";
+      box.querySelector("p").textContent = detail || "";
+      document.body.prepend(box);
+    };
+    window.addEventListener("error", function (e) {
+      if (!window.emdBooted) window.emdBootError(e.message);
+    });
+    window.addEventListener("unhandledrejection", function (e) {
+      if (!window.emdBooted) window.emdBootError(String(e.reason && e.reason.message || e.reason));
+    });
+    window.addEventListener("load", function () {
+      setTimeout(function () {
+        window.emdBootError("The editor's scripts did not finish loading.");
+      }, 10000);
+    });
+  </script>
+  <script type="module" src="/assets/js/app.js" onerror="emdBootError('A script file could not be loaded (it may have been blocked).')"></script>
 </head>
 <body>
-  <header class="titlebar">
-    <div class="brand"><span class="logo">M↓</span> EasyMarkDoc</div>
-    <nav class="menubar">
-      <div class="menu">
-        <button type="button" class="menu-button">File</button>
-        <div class="menu-list" hidden>
-          <button type="button" data-cmd="new">New document</button>
-          <button type="button" data-cmd="upload">Upload Markdown…</button>
-          <button type="button" data-cmd="open-disk">Open from disk…</button>
-          <hr />
-          <button type="button" data-cmd="save-md">Save Markdown<kbd>Ctrl+S</kbd></button>
-          <button type="button" data-cmd="save-md-as">Save Markdown to folder…</button>
-          <button type="button" data-cmd="download-md">Download Markdown</button>
-        </div>
+  <header class="toolbar">
+    <div class="tb-group">
+      <button type="button" class="tb-button" data-popover="view-menu" title="View">
+        <span class="tb-icon" data-icon="sidebar"></span><span class="tb-label">View</span>
+      </button>
+      <button type="button" class="tb-button zoom-button" data-popover="zoom-menu" title="Zoom">
+        <span class="tb-zoom-value" id="zoom-value">Fit</span><span class="tb-label">Zoom</span>
+      </button>
+    </div>
+
+    <div class="tb-title">
+      <button type="button" class="doc-title" data-popover="title-menu">
+        <span id="doc-title">Untitled</span>
+        <span class="doc-edited" id="doc-edited" hidden>— Edited</span>
+        <span class="tb-chevron" data-icon="chevron"></span>
+      </button>
+    </div>
+
+    <div class="tb-group tb-center">
+      <button type="button" class="tb-button" data-popover="insert-menu" title="Insert">
+        <span class="tb-icon" data-icon="insert"></span><span class="tb-label">Insert</span>
+      </button>
+      <button type="button" class="tb-button" data-popover="table-menu" title="Table">
+        <span class="tb-icon" data-icon="table"></span><span class="tb-label">Table</span>
+      </button>
+      <button type="button" class="tb-button" data-popover="media-menu" title="Media">
+        <span class="tb-icon" data-icon="media"></span><span class="tb-label">Media</span>
+      </button>
+      <button type="button" class="tb-button" id="proof-toggle" title="Show the exact PDF (read-only)">
+        <span class="tb-icon" data-icon="proof"></span><span class="tb-label">Proof</span>
+      </button>
+    </div>
+
+    <div class="tb-group tb-right">
+      <button type="button" class="tb-button" data-popover="export-menu" title="Export">
+        <span class="tb-icon" data-icon="export"></span><span class="tb-label">Export</span>
+      </button>
+      <div class="tb-inspector-toggle">
+        <button type="button" class="tb-button" id="show-format" title="Show or hide the text and image format bar">
+          <span class="tb-icon" data-icon="format"></span><span class="tb-label">Format</span>
+        </button>
+        <button type="button" class="tb-button" id="show-document" title="Show or hide page setup and theme settings">
+          <span class="tb-icon" data-icon="document"></span><span class="tb-label">Document</span>
+        </button>
       </div>
-      <div class="menu">
-        <button type="button" class="menu-button">Theme</button>
-        <div class="menu-list" hidden>
-          <button type="button" data-cmd="upload-css">Load theme CSS…</button>
-          <button type="button" data-cmd="open-css-disk">Open theme from disk…</button>
-          <hr />
-          <button type="button" data-cmd="save-css">Save theme to folder…</button>
-          <button type="button" data-cmd="download-css">Download theme CSS</button>
-          <hr />
-          <button type="button" data-cmd="reset-css">Reset to default theme</button>
-          <button type="button" data-cmd="show-css">Edit theme CSS</button>
-        </div>
-      </div>
-      <div class="menu">
-        <button type="button" class="menu-button">Export</button>
-        <div class="menu-list" hidden>
-          <button type="button" data-cmd="save-pdf">Save PDF to folder…<kbd>Ctrl+Shift+S</kbd></button>
-          <button type="button" data-cmd="download-pdf">Download PDF</button>
-          <button type="button" data-cmd="print-pdf">Open PDF in new tab</button>
-          <hr />
-          <button type="button" data-cmd="save-html">Save HTML to folder…</button>
-        </div>
-      </div>
-    </nav>
-    <input id="doc-name" class="doc-name" type="text" spellcheck="false" title="Document name (used for saved files)" />
-    <span id="dirty" class="dirty" title="Unsaved changes" hidden>●</span>
-    <div class="titlebar-spacer"></div>
-    <button type="button" class="primary" data-cmd="save-pdf">Save PDF</button>
-    <button type="button" class="secondary" data-cmd="download-pdf" title="Download PDF">⤓</button>
+    </div>
   </header>
 
-  <section class="ribbon">
-    <div class="ribbon-tabs" id="ribbon-tabs" role="tablist"></div>
-    <div class="ribbon-panels" id="ribbon-panels"></div>
-  </section>
+  <aside class="inspector" id="inspector" aria-label="Format bar"></aside>
 
   <main class="workspace" id="workspace">
-    <section class="pane editor-pane" id="editor-pane">
-      <div class="pane-tabs">
-        <button type="button" class="pane-tab active" data-editor="markdown">Document</button>
-        <button type="button" class="pane-tab" data-editor="css">Theme CSS</button>
-        <span class="pane-tabs-spacer"></span>
-        <span class="pane-info" id="file-path"></span>
+    <section class="source-pane" id="source-pane">
+      <div class="source-tabs">
+        <div class="seg small" role="tablist">
+          <button type="button" class="active" data-editor="markdown">Markdown</button>
+          <button type="button" data-editor="css">Theme CSS</button>
+        </div>
+        <span class="source-info" id="file-path"></span>
       </div>
       <div class="editor-host" id="markdown-editor"></div>
       <div class="editor-host" id="css-editor" hidden></div>
     </section>
-    <div class="splitter" id="splitter" role="separator" aria-orientation="vertical" tabindex="0"></div>
-    <section class="pane preview-pane">
-      <div class="pane-tabs">
-        <div class="segmented" id="mode-toggle" role="group" aria-label="Preview mode">
-          <button type="button" data-mode="pdf" title="Exact PDF rendered by Chromium">PDF</button>
-          <button type="button" data-mode="paged" title="Fast paginated HTML preview">Pages (fast)</button>
-        </div>
-        <span class="pane-tabs-spacer"></span>
-        <select id="zoom" title="Zoom">
-          <option value="fit">Fit width</option>
-          <option value="50">50%</option>
-          <option value="75">75%</option>
-          <option value="100">100%</option>
-          <option value="125">125%</option>
-          <option value="150">150%</option>
-          <option value="200">200%</option>
-        </select>
-        <button type="button" class="icon-button" id="refresh" title="Refresh preview">⟳</button>
+
+    <div class="sync-rail" id="sync-rail">
+      <div class="rail-resize" id="splitter" role="separator" aria-orientation="vertical" tabindex="0"></div>
+      <div class="rail-buttons">
+        <button type="button" id="go-page" title="Show the source cursor on the page (⌥⌘→)" data-icon="toPage"></button>
+        <button type="button" id="go-source" title="Show the page cursor in the source (⌥⌘←)" data-icon="toSource"></button>
       </div>
-      <div class="preview-host" id="preview"></div>
+    </div>
+
+    <section class="canvas" id="canvas">
+      <div class="page-host" id="page-view"></div>
+      <div class="proof-host" id="proof-view" hidden></div>
+      <div class="proof-banner" id="proof-banner" hidden>
+        Proof — exact PDF output (read-only).
+        <button type="button" id="proof-exit">Back to Editing</button>
+      </div>
+      <div class="canvas-status" id="status"></div>
     </section>
+
   </main>
 
-  <footer class="statusbar">
-    <span id="status-render">Starting…</span>
-    <span id="status-pages"></span>
-    <span class="titlebar-spacer"></span>
-    <span id="status-words"></span>
-    <span id="status-engine" title="PDF engine"></span>
-  </footer>
+  <!-- Popovers -->
+  <div class="popover" id="view-menu" hidden>
+    <button type="button" data-cmd="toggle-source"><span class="check" data-check="source"></span>Markdown Source</button>
+    <button type="button" data-cmd="toggle-inspector"><span class="check" data-check="inspector"></span>Format Bar</button>
+    <button type="button" data-cmd="toggle-proof"><span class="check" data-check="proof"></span>Proof (exact PDF)</button>
+    <hr />
+    <button type="button" data-cmd="show-css">Edit Theme CSS</button>
+  </div>
+
+  <div class="popover" id="zoom-menu" hidden>
+    <button type="button" data-zoom="fit">Fit Width</button>
+    <hr />
+    <button type="button" data-zoom="50">50%</button>
+    <button type="button" data-zoom="75">75%</button>
+    <button type="button" data-zoom="100">100%</button>
+    <button type="button" data-zoom="125">125%</button>
+    <button type="button" data-zoom="150">150%</button>
+    <button type="button" data-zoom="200">200%</button>
+  </div>
+
+  <div class="popover title-popover" id="title-menu" hidden>
+    <label class="pop-field">Name <input type="text" id="doc-name" spellcheck="false" /></label>
+    <div class="pop-location" id="doc-location"></div>
+    <hr />
+    <button type="button" data-cmd="new">New Document</button>
+    <button type="button" data-cmd="open-disk">Open…<kbd>⌘O</kbd></button>
+    <button type="button" data-cmd="upload">Upload Markdown…</button>
+    <hr />
+    <button type="button" data-cmd="save-md">Save<kbd>⌘S</kbd></button>
+    <button type="button" data-cmd="save-md-as">Save As…</button>
+    <button type="button" data-cmd="download-md">Download Markdown</button>
+  </div>
+
+  <div class="popover" id="insert-menu" hidden>
+    <button type="button" data-insert="pagebreak">Page Break</button>
+    <button type="button" data-insert="toc">Table of Contents</button>
+    <button type="button" data-insert="footnote">Footnote</button>
+    <button type="button" data-insert="hr">Horizontal Line</button>
+    <hr />
+    <button type="button" data-insert="codeblock">Code Block</button>
+    <button type="button" data-insert="quote">Block Quote</button>
+    <button type="button" data-insert="tasks">Checklist</button>
+    <button type="button" data-insert="link">Link…</button>
+  </div>
+
+  <div class="popover table-popover" id="table-menu" hidden>
+    <div class="table-picker" id="table-picker"></div>
+    <div class="table-picker-label" id="table-picker-label">Insert Table</div>
+  </div>
+
+  <div class="popover" id="media-menu" hidden>
+    <button type="button" data-cmd="image-file">Choose Image…</button>
+    <button type="button" data-cmd="image-url">Image from Web Address…</button>
+  </div>
+
+  <div class="popover" id="export-menu" hidden>
+    <div class="pop-heading">PDF</div>
+    <button type="button" data-cmd="save-pdf">Save to Folder…<kbd>⇧⌘S</kbd></button>
+    <button type="button" data-cmd="download-pdf">Download</button>
+    <button type="button" data-cmd="print-pdf">Open in New Tab</button>
+    <hr />
+    <div class="pop-heading">Other Formats</div>
+    <button type="button" data-cmd="save-html">HTML to Folder…</button>
+    <button type="button" data-cmd="download-md">Markdown</button>
+  </div>
 
   <input type="file" id="upload-md" accept=".md,.markdown,.mdown,.txt,text/markdown" hidden />
   <input type="file" id="upload-css" accept=".css,text/css" hidden />
+  <input type="file" id="upload-image" accept="image/*" multiple hidden />
 
   <dialog id="picker" class="picker">
     <form method="dialog" class="picker-form">
       <h2 id="picker-title">Choose a folder</h2>
       <div class="picker-path">
-        <button type="button" id="picker-up" title="Parent folder">↑</button>
+        <button type="button" id="picker-up" title="Parent folder">‹</button>
         <button type="button" id="picker-home" title="Home folder">⌂</button>
         <input type="text" id="picker-path" spellcheck="false" />
         <button type="button" id="picker-go">Go</button>
       </div>
       <ul class="picker-list" id="picker-list"></ul>
-      <label class="picker-name" id="picker-name-row">File name <input type="text" id="picker-name" spellcheck="false" /></label>
+      <label class="picker-name" id="picker-name-row">Save As <input type="text" id="picker-name" spellcheck="false" /></label>
       <p class="picker-error" id="picker-error" hidden></p>
       <div class="picker-actions">
         <button type="button" value="cancel" id="picker-cancel">Cancel</button>

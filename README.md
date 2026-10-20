@@ -9,17 +9,26 @@ exactly, including page size, margins, headers/footers and page numbers.
 There are three ways to use it:
 
 1. **Command line**: `EasyMarkDoc notes.md` writes `notes.pdf`.
-2. **Web editor**: `EasyMarkDoc serve` opens a two-panel editor with a live
-   PDF preview and a Word-style ribbon that edits the CSS theme for you.
+2. **Web editor**: `EasyMarkDoc serve` opens a Pages-style editor where you
+   type directly onto the pages (or into the Markdown source, kept in sync),
+   style the document with an inspector, and lay out images by dragging.
 3. **VS Code extension**: a live PDF preview beside your editor, plus export.
 
 ## Installation
 
 ```bash
-cargo build --release
-# optional: put it on your PATH
-cargo install --path .
+cargo install --path . --force   # builds and puts EasyMarkDoc on your PATH
 ```
+
+Use `--force` when updating, so cargo replaces the previously installed copy.
+To just build without installing, run `cargo build --release`; the binary
+is `target/release/EasyMarkDoc`.
+
+The web editor's files are compiled into the binary, so stop any running
+`EasyMarkDoc serve` and start it again after reinstalling. The editor works
+in current Chromium-based browsers (Chrome, Edge, Arc, Brave) and
+Firefox-based browsers (Firefox, Zen). If a browser still shows an old
+version after an update, reload the page once.
 
 ### PDF engine
 
@@ -61,36 +70,94 @@ as the theme automatically (by the CLI, the web editor and VS Code).
 EasyMarkDoc serve [file.md] [--port 4848] [--css theme.css] [--output-dir DIR]
 ```
 
-This opens `http://127.0.0.1:4848/` in your browser. The editor has:
+This opens `http://127.0.0.1:4848/` in your browser. The layout follows Apple
+Pages, with the inspector as a **format bar** across the top so the source and
+the pages get the full width:
 
-- **The Document and Theme CSS tabs** on the left. The Markdown editor
-  continues lists automatically and has formatting shortcuts (Ctrl/Cmd + B, I,
-  K, Alt+1–3 for headings).
-- **The preview** on the right:
-  - *PDF*: the exact PDF from Chromium. This is the default.
-  - *Pages (fast)*: paginated HTML for instant feedback while typing.
-- **The ribbon**:
-  - *Home*: text formatting, paragraph styles, lists, and inserting tables,
-    code, page breaks, a table of contents and footnotes; document font,
-    size, colour and alignment
-  - *Design*: style sets (Default, Modern, Academic, Report, Technical,
-    Elegant, Minimal), colours, code colour scheme, heading numbering
-  - *Layout*: page size and orientation, margins (with presets), line and
-    paragraph spacing, first-line indent
-  - *Headings*: font, weight, colour, sizes, underline rules, alignment
-  - *Header & Footer*: left, centre and right text with `{page}`,
-    `{pages}`, `{title}` and `{date}` fields; hide on the first page
-  - *Tables & More*: table, quote, inline code and image styling
-- **File, Theme and Export menus**: upload or open Markdown from disk, save
-  it back, load or save themes, and save the PDF (or HTML) to any folder on
-  your computer, or download it.
+- **Toolbar**:
+  - View (show or hide the source and the format bar) and Zoom
+  - the document title (rename, open, save)
+  - Insert (page break, table of contents, footnote, code, quote, checklist, link)
+  - Table (pick a size), Media (add images), Proof (show the exact PDF)
+  - Export
+  - Format / Document (switch the format bar, or click again to hide it)
+- **Format bar** (tabs on its left; scroll sideways if the window is narrow):
+  - *Format › Style*: paragraph style (Body, Heading 1–4, Quote, Code);
+    the style's font, size and colour; bold, italic, strikethrough,
+    highlight, code and link; alignment; bullets and lists
+  - *Format › Layout*: line and paragraph spacing, indents, and settings
+    for the current heading, quote, code block or table
+  - *Document*: paper size and orientation, margins, header and footer
+    (with page number, page count, title and date fields), heading numbering
+  - *Theme*: style sets, fonts, colours, code, tables, quotes and captions,
+    and loading or saving the theme file
+- **Markdown source** on the left (Markdown and Theme CSS tabs). Edits there
+  update the pages. The **› and ‹ buttons** between the panels jump from your
+  cursor in the source to the same place on the page, and back.
+- **Pages**: the document laid out in pages exactly as it will print. Click
+  and type to edit it. Every edit is written back into the Markdown as you
+  type, and Enter, Backspace, Tab, Shift+Enter, paste and ⌘B/⌘I/⌘K work as
+  you'd expect. Checkboxes can be ticked on the page. Links are edited like
+  any other text; ⌘/Ctrl-click follows one (links in the table of contents
+  jump to their heading).
+- **Proof**: the real PDF from Chromium, read-only. The jump buttons work
+  here too (click the PDF, then ‹).
 
-Every ribbon change is written into the theme CSS (visible in the Theme CSS
-tab), so you can save it as `easymarkdoc.css` and reuse it from the command
-line or VS Code.
+Paragraph-style and document settings are CSS variables in the theme (see
+the Theme CSS tab), so a theme saved as `easymarkdoc.css` applies to the
+command line and VS Code too. Fonts that aren't installed on your computer
+are marked in the font menus; they would fall back to another font in the PDF.
 
-The server listens on localhost only, and every API call needs a random
-per-session token.
+With **text selected on the page**, the font, size and colour controls change
+just that text (the Font section's label turns blue to show it). This is
+stored as an HTML span in the Markdown, e.g.
+`<span style="color: #c00000">important</span>`; the clear-style button
+next to Link removes it again.
+
+### Images
+
+Add images with **Media**, by pasting, or by dropping files onto the page.
+They're copied into an `images/` folder next to the document. On the page:
+
+- **click** an image to select it, then drag its handles to resize it
+- **drag** it to move it to another place in the text
+- **double-click** it to edit its crop mask: drag to reposition, scroll to
+  zoom, then click Done
+- press **Delete** to remove it
+
+The Format inspector for a selected image has the rest:
+
+- *Style*: frame presets (framed, polaroid, rounded, circle, outline),
+  border, shadow, corner radius and opacity
+- *Image*: mask shape and zoom, rotation and flipping, caption and
+  description
+- *Arrange*: width, text wrap (inline, above and below, or around) and
+  alignment
+
+All of this is stored as attributes on the image in the Markdown, so the
+source stays readable and the PDF matches the page:
+
+```markdown
+![Chart](images/chart.png "Figure 1: Sales"){width=45% align=left wrap shadow=soft .img-rounded}
+```
+
+| Attribute | Meaning |
+|---|---|
+| `width=45%` | width (%, px, mm, cm, in, em) |
+| `align=left\|center\|right` | position |
+| `wrap` | text wraps around a left/right image |
+| `inline` | image sits in the line of text |
+| `aspect=4:3 zoom=1.5 focus=30,60` | crop mask: shape, zoom, focal point (%) |
+| `rotate=15`, `flip=h\|v\|hv` | rotation (degrees) and flipping |
+| `border=2 border-color=#333 border-style=dashed` | border |
+| `radius=8` / `radius=50%` | rounded corners |
+| `shadow=soft\|medium\|hard\|float`, `opacity=0.8` | shadow, transparency |
+| `.img-framed` `.img-polaroid` `.img-rounded` `.img-circle` `.img-outline` | style presets (theme classes) |
+
+A title (`"Figure 1: Sales"`) becomes a caption under the image.
+
+The server listens on localhost only and requires a random per-session token
+for every API call.
 
 ## VS Code extension
 
@@ -105,7 +172,7 @@ Commands (Command Palette → *EasyMarkDoc*):
 | Open PDF Preview to the Side (also the editor title bar button) | Ctrl/Cmd+Alt+P |
 | Export PDF (next to the file, or to `easymarkdoc.outputDirectory`) | Ctrl/Cmd+Alt+E |
 | Export PDF As… | |
-| Open Style Editor in Browser (opens the web editor's ribbon for this file) | |
+| Open Style Editor in Browser (opens this file in the web editor) | |
 | Create Theme File (`easymarkdoc.css`) / Select Theme CSS… | |
 
 The preview reloads when the theme file changes, including unsaved edits to
@@ -197,6 +264,9 @@ src/
   server.rs      web editor / preview HTTP server
   styles.css     default theme
 web/             web editor (vanilla JS; vendored CodeMirror 5, pdf.js, paged.js)
+  js/document-view.js  editable page view (paged.js + contenteditable)
+  js/mdtools.js    page HTML → Markdown, image attributes, structural edits
+  js/inspector.js  format bar (Pages-style inspector above the panels)
 vscode-extension/
 ```
 

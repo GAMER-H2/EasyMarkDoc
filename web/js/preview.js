@@ -45,6 +45,7 @@ export class Preview {
     this.placeholder.textContent = "Preview will appear here";
     root.append(this.scroller, this.error);
     this.scroller.append(this.placeholder);
+    this.scroller.addEventListener("click", (e) => this.onPdfClick(e));
 
     let lastWidth = 0;
     new ResizeObserver(() => {
@@ -216,6 +217,7 @@ export class Preview {
       { root: this.scroller, rootMargin: "800px 0px" },
     );
     items.forEach((item) => this.observer.observe(item.div));
+    this.pageItems = items;
     return pages.length;
   }
 
@@ -255,7 +257,10 @@ export class Preview {
     const frame = document.createElement("iframe");
     frame.className = "emd-paged-frame";
     frame.title = "Document preview";
-    frame.style.visibility = "hidden";
+    // Lay out off-screen without visibility:hidden, which makes Firefox
+    // throttle the frame and slows pagination down ~40x.
+    frame.style.opacity = "0";
+    frame.style.pointerEvents = "none";
     const done = new Promise((resolve) => {
       const timeout = setTimeout(resolve, 15000);
       frame.addEventListener("paged", () => {
@@ -277,7 +282,33 @@ export class Preview {
     for (const child of [...this.scroller.children]) {
       if (child !== frame) child.remove();
     }
-    frame.style.visibility = "";
+    // paged.js rewrites stylesheets in the document head, so add the
+    // on-screen page layout once pagination has finished.
+    const style = frame.contentDocument?.createElement("style");
+    if (style) {
+      style.textContent =
+        ".pagedjs_pages{display:flex;flex-direction:column;align-items:safe center;width:max-content;min-width:100%;box-sizing:border-box;padding:16px}" +
+        ".pagedjs_page{box-shadow:0 2px 12px rgba(0,0,0,.18);margin-bottom:16px}" +
+        "html,body{background:transparent!important}" +
+        "[data-split-to]{text-align-last:auto!important}";
+      frame.contentDocument.head.append(style);
+      // Links would navigate the preview away from the document: scroll to
+      // internal targets instead, and open web links in a new window.
+      frame.contentDocument.addEventListener("click", (e) => {
+        const a = e.target.closest?.("a[href]");
+        if (!a) return;
+        e.preventDefault();
+        const href = a.getAttribute("href") || "";
+        if (href.startsWith("#")) {
+          frame.contentDocument.getElementById(decodeURIComponent(href.slice(1)))?.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else if (/^(https?|mailto):/i.test(href)) {
+          window.open(href, "_blank", "noopener");
+        }
+      });
+      frame.contentDocument.addEventListener("dragstart", (e) => e.preventDefault());
+    }
+    frame.style.opacity = "";
+    frame.style.pointerEvents = "";
     this.applyPagedZoom(frame);
     const d = frame.contentDocument?.documentElement;
     if (d) frame.contentWindow.scrollTo(0, ratio * (d.scrollHeight - frame.clientHeight));
@@ -296,6 +327,69 @@ export class Preview {
       zoom = Number(this.zoom) / 100;
     }
     doc.documentElement.style.zoom = String(zoom);
+  }
+
+  // ------------------------------------------------- text lookup (PDF mode)
+
+  async pageText(index) {
+    this.textCache ||= new Map();
+    const key = `${this.seq}:${index}`;
+    if (this.textCache.has(key)) return this.textCache.get(key);
+    const items = this.pageItems?.[index];
+    if (!items) return null;
+    const content = await items.page.getTextContent();
+    const entries = content.items
+      .filter((i) => i.str.trim())
+      .map((i) => ({ str: i.str, y: i.transform[5], x: i.transform[4], height: i.height }));
+    const result = { entries, text: entries.map((e) => e.str).join(" ").replace(/\s+/g, " ") };
+    this.textCache.set(key, result);
+    return result;
+  }
+
+  /** Scroll to the first occurrence of `snippet` in the PDF. */
+  async revealText(snippet) {
+    const needle = (snippet || "").replace(/\s+/g, " ").trim().slice(0, 30);
+    if (!needle || !this.pageItems) return false;
+    for (let i = 0; i < this.pageItems.length; i++) {
+      const page = await this.pageText(i);
+      if (!page || !page.text.includes(needle)) continue;
+      const item = this.pageItems[i];
+      const words = needle.split(" ").slice(0, 3).join(" ");
+      const entry = page.entries.find((e) => e.str.includes(words) || words.includes(e.str.trim())) || page.entries[0];
+      const viewport = item.viewport;
+      const [, y] = viewport.convertToViewportPoint(entry.x, entry.y);
+      const top = item.div.offsetTop + y - (entry.height || 10) * viewport.scale;
+      this.scroller.scrollTo({ top: Math.max(0, top - this.scroller.clientHeight / 3), behavior: "smooth" });
+      const mark = document.createElement("div");
+      mark.className = "emd-pdf-mark";
+      mark.style.top = `${y + 2}px`;
+      item.div.append(mark);
+      setTimeout(() => mark.remove(), 1700);
+      return true;
+    }
+    return false;
+  }
+
+  async onPdfClick(e) {
+    const div = e.target.closest(".emd-pdf-page");
+    if (!div || !this.pageItems) return;
+    const item = this.pageItems[Number(div.dataset.index)];
+    const page = await this.pageText(Number(div.dataset.index));
+    if (!page) return;
+    const rect = div.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    let best = null;
+    let bestDist = Infinity;
+    for (const entry of page.entries) {
+      const [ex, ey] = item.viewport.convertToViewportPoint(entry.x, entry.y);
+      const d = Math.abs(ey - y) * 3 + Math.abs(ex - x) * 0.2;
+      if (d < bestDist) {
+        bestDist = d;
+        best = entry;
+      }
+    }
+    this.lastClickedText = best?.str || null;
   }
 
   /** The last rendered PDF, if any (used for downloads). */
