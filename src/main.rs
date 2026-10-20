@@ -43,6 +43,12 @@ enum Command {
         #[arg(long)]
         force_download: bool,
     },
+    /// Run as a language server on stdin/stdout (used by the Zed extension)
+    Lsp {
+        /// Accepted for compatibility; stdio is the only transport
+        #[arg(long, hide = true)]
+        stdio: bool,
+    },
 }
 
 #[derive(Args, Clone)]
@@ -147,6 +153,7 @@ fn main() -> ExitCode {
             Some(Command::Serve(args)) => serve(args).await,
             Some(Command::Theme { output }) => print_theme(output),
             Some(Command::Setup { force_download }) => setup(force_download).await,
+            Some(Command::Lsp { .. }) => easymarkdoc::lsp::run().await,
             None => convert(cli.convert).await,
         }
     });

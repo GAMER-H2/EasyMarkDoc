@@ -1,0 +1,13 @@
+id = "easymarkdoc"
+name = "EasyMarkDoc"
+version = "0.2.0"
+schema_version = 1
+authors = ["GAMER-H2"]
+description = "Live PDF preview and export for Markdown, styled with customisable CSS themes"
+repository = "https://github.com/GAMER-H2/EasyMarkDoc"
+
+# The language server is the `EasyMarkDoc lsp` subcommand. It is attached to
+# CSS as well so unsaved edits to a theme file update the preview.
+[language_servers.easymarkdoc]
+name = "EasyMarkDoc"
+languages = ["Markdown", "CSS"]

@@ -6,13 +6,15 @@ EasyMarkDoc renders Markdown to HTML with its own parser, applies a CSS theme,
 and prints it to PDF with headless Chromium, so the PDF follows the CSS
 exactly, including page size, margins, headers/footers and page numbers.
 
-There are three ways to use it:
+There are four ways to use it:
 
 1. **Command line**: `EasyMarkDoc notes.md` writes `notes.pdf`.
 2. **Web editor**: `EasyMarkDoc serve` opens a Pages-style editor where you
    type directly onto the pages (or into the Markdown source, kept in sync),
    style the document with an inspector, and lay out images by dragging.
 3. **VS Code extension**: a live PDF preview beside your editor, plus export.
+4. **Zed extension**: export and a live browser preview from Zed's code
+   actions.
 
 ## Installation
 
@@ -191,6 +193,91 @@ For development, open `vscode-extension/` in VS Code and press F5. When the
 workspace is this repository, the extension uses `target/release` or
 `target/debug` automatically.
 
+## Zed extension
+
+The extension lives in [`zed-extension/`](zed-extension). Zed extensions
+can't show web content inside the editor, so the extension runs
+`EasyMarkDoc lsp` as a language server for Markdown (and CSS, so theme edits
+are picked up) and adds these **code actions** to Markdown files. Open them
+with ⌘. (Ctrl+. on Linux and Windows) or the ⚡ indicator next to the cursor
+line:
+
+| Code action | What it does |
+|---|---|
+| EasyMarkDoc: Export PDF | Saves `name.pdf` next to the file (or in `output_directory`), then offers *Open PDF* / *Reveal in Folder* |
+| EasyMarkDoc: Export PDF and Open | The same, then opens the PDF in your PDF viewer |
+| EasyMarkDoc: Export HTML | Saves a standalone `name.html` |
+| EasyMarkDoc: Open Live Preview in Browser | Opens the preview in your default browser |
+
+Exports and the preview use the text in the editor, including unsaved
+changes. The preview updates as you type, and when the theme changes
+(including unsaved edits to an open `easymarkdoc.css`). Its toolbar has the
+PDF / Pages (fast) toggle and zoom, **Export PDF** (saves to the same place
+as the code action), and **Style editor**, which opens the document in the
+full web editor. The web editor works on the saved file, so save in Zed
+first. Its saves are picked up by Zed and by the preview.
+
+The preview server runs inside the language server, so a preview tab stops
+updating when Zed quits. Reopen it with the code action.
+
+### Installing
+
+1. Install EasyMarkDoc so Zed can find it on your `PATH`:
+
+   ```bash
+   cargo install --path . --force
+   ```
+
+2. Zed compiles extensions itself, so Rust has to be installed through
+   [rustup](https://rustup.rs) (Homebrew's Rust is not enough).
+3. In Zed, open the command palette and run **zed: install dev extension**,
+   then choose the `zed-extension/` folder of this repository.
+
+Open a Markdown file and press ⌘. to see the actions. If they don't appear,
+check **zed: open log** for "EasyMarkDoc". If you have restricted Markdown's
+language servers in your settings, add `"easymarkdoc"` to that list.
+
+After updating EasyMarkDoc, run `cargo install --path . --force` again and
+**editor: restart language server** in Zed. After changing the extension
+itself, use **Rebuild** next to it on the Extensions page.
+
+### Settings
+
+All settings are optional. They go in Zed's `settings.json`:
+
+```jsonc
+{
+  "lsp": {
+    "easymarkdoc": {
+      // only needed if EasyMarkDoc isn't on your PATH
+      "binary": { "path": "/Users/me/.cargo/bin/EasyMarkDoc" },
+      "settings": {
+        "output_directory": "pdf",        // relative to the Markdown file, or absolute
+        "theme_path": "themes/report.css", // relative to the project, or absolute
+        "preview_mode": "pdf",            // or "paged" for the fast HTML pages
+        "chrome_path": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "allow_browser_download": true
+      }
+    }
+  }
+}
+```
+
+Without `theme_path`, `easymarkdoc.css` next to the Markdown file is used if
+it exists. `chrome_path` and `allow_browser_download` take effect when the
+language server restarts. Once you change the preview mode or zoom in the
+browser, the browser remembers your choice.
+
+### Publishing
+
+To list the extension in Zed's extension store, add a licence file to
+`zed-extension/` (Zed requires one) and open a pull request against
+[zed-industries/extensions](https://github.com/zed-industries/extensions)
+that adds this repository as a submodule, with `path = "zed-extension"` in
+its `extensions.toml` entry (see Zed's
+[extension publishing guide](https://zed.dev/docs/extensions/developing-extensions#publishing-your-extension)).
+Users still have to install the EasyMarkDoc binary themselves, as in step 1.
+
 ## Themes
 
 A theme is a CSS file layered **on top of** the default theme
@@ -262,12 +349,14 @@ src/
   document.rs    full HTML document builder
   pdf.rs         Chromium discovery, download and PDF rendering
   server.rs      web editor / preview HTTP server
+  lsp.rs         language server for the Zed extension (`EasyMarkDoc lsp`)
   styles.css     default theme
 web/             web editor (vanilla JS; vendored CodeMirror 5, pdf.js, paged.js)
   js/document-view.js  editable page view (paged.js + contenteditable)
   js/mdtools.js    page HTML → Markdown, image attributes, structural edits
   js/inspector.js  format bar (Pages-style inspector above the panels)
 vscode-extension/
+zed-extension/   Zed extension (Rust → WebAssembly; starts `EasyMarkDoc lsp`)
 ```
 
 Third-party front-end libraries in `web/vendor/` keep their own licences

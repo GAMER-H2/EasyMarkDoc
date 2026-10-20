@@ -5,6 +5,7 @@
 
 pub mod document;
 pub mod highlight;
+pub mod lsp;
 pub mod markdown;
 pub mod pdf;
 pub mod server;

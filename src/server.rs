@@ -1,24 +1,28 @@
-//! Local web server powering the browser editor and the VS Code preview.
+//! Local web server powering the browser editor and the VS Code and Zed
+//! previews.
 //!
 //! Every `/api` request must carry the session token in the
 //! `X-EasyMarkDoc-Token` header. Combined with binding to localhost this
 //! stops other websites from driving the server (the custom header forces a
 //! CORS preflight, which is never approved).
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+use std::convert::Infallible;
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
+use std::time::Duration;
 
 use anyhow::Context;
 use axum::extract::{DefaultBodyLimit, Path as AxumPath, Query, State};
 use axum::http::{HeaderMap, StatusCode, header};
+use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use rust_embed::RustEmbed;
 use serde::{Deserialize, Serialize};
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, oneshot, watch};
 
 use crate::document::{self, HtmlOptions};
 use crate::highlight;
@@ -54,11 +58,125 @@ struct AppState {
     output_dir: PathBuf,
     /// Directories the preview may load local files (images, fonts) from.
     allowed_dirs: RwLock<HashSet<PathBuf>>,
+    /// Documents pushed by an editor integration, by id, for live previews.
+    live: std::sync::Mutex<HashMap<String, watch::Sender<Arc<LiveDocument>>>>,
 }
 
 type Shared = Arc<AppState>;
 
+/// A document kept up to date by an editor (the Zed language server) and
+/// streamed to `/preview?doc=<id>` pages.
+#[derive(Debug, Clone, Serialize)]
+pub struct LiveDocument {
+    pub markdown: String,
+    pub css: Option<String>,
+    pub base_dir: Option<PathBuf>,
+    pub file_name: String,
+    pub file_path: Option<PathBuf>,
+    /// The editor has unsaved changes.
+    pub dirty: bool,
+    /// Where the preview's Export button saves the PDF.
+    #[serde(skip)]
+    pub export_path: Option<PathBuf>,
+}
+
+/// A server started with [`start`], serving in the background.
+pub struct RunningServer {
+    /// Base URL, ending with `/`.
+    pub url: String,
+    state: Shared,
+    running: std::sync::Mutex<Option<(oneshot::Sender<()>, tokio::task::JoinHandle<()>)>>,
+}
+
+impl RunningServer {
+    pub fn token(&self) -> &str {
+        &self.state.token
+    }
+
+    /// URL of the live preview page for a published document.
+    pub fn preview_url(&self, id: &str, mode: Option<&str>) -> String {
+        let mut url = format!(
+            "{}preview?token={}&doc={}",
+            self.url,
+            self.state.token,
+            document::percent_encode_path(id)
+        );
+        if let Some(mode) = mode {
+            url.push_str("&mode=");
+            url.push_str(mode);
+        }
+        url
+    }
+
+    /// Publish (or update) a live document; open previews re-render.
+    pub fn publish(&self, id: &str, doc: LiveDocument) {
+        let mut live = self.state.live.lock().unwrap();
+        match live.get(id) {
+            Some(tx) => {
+                tx.send_replace(Arc::new(doc));
+            }
+            None => {
+                live.insert(id.to_string(), watch::channel(Arc::new(doc)).0);
+            }
+        }
+    }
+
+    pub fn is_published(&self, id: &str) -> bool {
+        self.state.live.lock().unwrap().contains_key(id)
+    }
+
+    /// Render Markdown to PDF with the server's (shared, pre-started) engine.
+    pub async fn render_pdf(
+        &self,
+        markdown: &str,
+        css: Option<String>,
+        base_dir: Option<&Path>,
+    ) -> anyhow::Result<Vec<u8>> {
+        render_pdf_bytes(&self.state, markdown, css, base_dir).await
+    }
+
+    /// Stop serving and close the PDF engine.
+    pub async fn shutdown(&self) {
+        // Dropping the live documents ends their event streams, which would
+        // otherwise keep the graceful shutdown waiting.
+        self.state.live.lock().unwrap().clear();
+        let Some((stop, mut task)) = self.running.lock().unwrap().take() else {
+            return;
+        };
+        let _ = stop.send(());
+        if tokio::time::timeout(Duration::from_secs(3), &mut task)
+            .await
+            .is_err()
+        {
+            task.abort();
+        }
+        if let Some(engine) = self.state.engine.lock().await.take()
+            && let Ok(engine) = Arc::try_unwrap(engine)
+        {
+            engine.close().await;
+        }
+    }
+}
+
 pub async fn serve(options: ServeOptions) -> anyhow::Result<()> {
+    let open_browser = options.open_browser;
+    let exit_on_stdin = options.exit_on_stdin_close;
+    let server = start(options).await?;
+    // The VS Code extension parses this line to find the port.
+    println!("EasyMarkDoc server listening on {}", server.url);
+    eprintln!("Press Ctrl+C to stop.");
+
+    if open_browser {
+        let _ = open::that(&server.url);
+    }
+    shutdown_signal(exit_on_stdin).await;
+    server.shutdown().await;
+    Ok(())
+}
+
+/// Bind and start serving in the background. `open_browser` and
+/// `exit_on_stdin_close` are ignored; see [`serve`].
+pub async fn start(options: ServeOptions) -> anyhow::Result<RunningServer> {
     let token = options
         .token
         .clone()
@@ -93,6 +211,7 @@ pub async fn serve(options: ServeOptions) -> anyhow::Result<()> {
         initial_css_path: css_path,
         output_dir,
         allowed_dirs: RwLock::new(allowed),
+        live: Default::default(),
     });
 
     // Start the browser in the background so the first preview is quick.
@@ -116,6 +235,8 @@ pub async fn serve(options: ServeOptions) -> anyhow::Result<()> {
         .route("/api/browse", get(api_browse))
         .route("/api/open", post(api_open))
         .route("/api/upload", post(api_upload))
+        .route("/api/live/events", get(api_live_events))
+        .route("/api/live/export", post(api_live_export))
         .layer(DefaultBodyLimit::max(64 * 1024 * 1024))
         .with_state(state.clone());
 
@@ -130,27 +251,23 @@ pub async fn serve(options: ServeOptions) -> anyhow::Result<()> {
     };
     let local = listener.local_addr()?;
     let url = format!("http://{}:{}/", display_host(&options.host), local.port());
-    // The VS Code extension parses this line to find the port.
-    println!("EasyMarkDoc server listening on {url}");
-    eprintln!("Press Ctrl+C to stop.");
 
-    if options.open_browser {
-        let _ = open::that(&url);
-    }
-
-    let shutdown_state = state.clone();
-    let exit_on_stdin = options.exit_on_stdin_close;
-    axum::serve(listener, app)
-        .with_graceful_shutdown(async move {
-            shutdown_signal(exit_on_stdin).await;
-            if let Some(engine) = shutdown_state.engine.lock().await.take()
-                && let Ok(engine) = Arc::try_unwrap(engine)
-            {
-                engine.close().await;
-            }
-        })
-        .await?;
-    Ok(())
+    let (stop, stopped) = oneshot::channel::<()>();
+    let task = tokio::spawn(async move {
+        let result = axum::serve(listener, app)
+            .with_graceful_shutdown(async move {
+                let _ = stopped.await;
+            })
+            .await;
+        if let Err(e) = result {
+            eprintln!("Server error: {e}");
+        }
+    });
+    Ok(RunningServer {
+        url,
+        state,
+        running: std::sync::Mutex::new(Some((stop, task))),
+    })
 }
 
 async fn shutdown_signal(exit_on_stdin_close: bool) {
@@ -766,6 +883,85 @@ async fn api_open(
         path: path.display().to_string(),
         directory,
         content,
+    }))
+}
+
+#[derive(Deserialize)]
+struct LiveQuery {
+    doc: String,
+    /// EventSource can't send headers, so the token comes in the URL.
+    token: String,
+}
+
+/// Server-sent events with the current contents of a live document: one
+/// `update` event straight away, then one per change (coalesced).
+async fn api_live_events(
+    State(state): State<Shared>,
+    Query(q): Query<LiveQuery>,
+) -> Result<Response, ApiError> {
+    if !constant_time_eq(q.token.as_bytes(), state.token.as_bytes()) {
+        return Err(ApiError(StatusCode::UNAUTHORIZED, "invalid token".into()));
+    }
+    let Some(rx) = state
+        .live
+        .lock()
+        .unwrap()
+        .get(&q.doc)
+        .map(watch::Sender::subscribe)
+    else {
+        return Err(ApiError(StatusCode::NOT_FOUND, "unknown document".into()));
+    };
+    let stream = futures::stream::unfold((rx, true), |(mut rx, first)| async move {
+        if !first && rx.changed().await.is_err() {
+            return None;
+        }
+        let doc = rx.borrow_and_update().clone();
+        let event = Event::default().event("update").json_data(&*doc).ok()?;
+        Some((Ok::<_, Infallible>(event), (rx, false)))
+    });
+    Ok(Sse::new(stream)
+        .keep_alive(KeepAlive::default())
+        .into_response())
+}
+
+#[derive(Deserialize)]
+struct LiveExportRequest {
+    doc: String,
+}
+
+/// Export a live document as PDF to its export path.
+async fn api_live_export(
+    State(state): State<Shared>,
+    headers: HeaderMap,
+    Json(req): Json<LiveExportRequest>,
+) -> Result<Json<SaveResponse>, ApiError> {
+    check_token(&state, &headers)?;
+    let doc = state
+        .live
+        .lock()
+        .unwrap()
+        .get(&req.doc)
+        .map(|tx| tx.borrow().clone())
+        .ok_or_else(|| ApiError(StatusCode::NOT_FOUND, "unknown document".into()))?;
+    let path = doc
+        .export_path
+        .clone()
+        .ok_or_else(|| bad_request("this document has no export location"))?;
+    let pdf = render_pdf_bytes(
+        &state,
+        &doc.markdown,
+        doc.css.clone(),
+        doc.base_dir.as_deref(),
+    )
+    .await?;
+    if let Some(parent) = path.parent() {
+        tokio::fs::create_dir_all(parent).await?;
+    }
+    tokio::fs::write(&path, pdf)
+        .await
+        .with_context(|| format!("writing {}", path.display()))?;
+    Ok(Json(SaveResponse {
+        path: path.display().to_string(),
     }))
 }
 
